@@ -1,3 +1,20 @@
+# Node
 node_modules/
+
+# Environment files
 .env
+.env.txt
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Uploads
+backend/uploads/
+
+# OS
 .DS_Store
+
+# Logs
+*.log
