@@ -1,5 +1,5 @@
 // Base configuration
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://sherlock-backend.onrender.com/api';
 
 // Helper function to handle fetch errors
 async function fetchAPI(endpoint, options = {}) {
