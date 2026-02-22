@@ -59,7 +59,7 @@ def generate_embedding():
         
         input_tensor = preprocess(img)
         input_batch = input_tensor.unsqueeze(0) # create a mini-batch as expected by the model
-        
+        load_model()
         with torch.no_grad():
             embedding = model(input_batch)
         
