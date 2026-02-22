@@ -12,29 +12,25 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
 # Load MobileNetV2 pre-trained on ImageNet
-print("Loading MobileNetV2 model...")
-# weights='DEFAULT' is equivalent to weights='IMAGENET1K_V1'
-weights = models.MobileNet_V2_Weights.DEFAULT
-model = models.mobilenet_v2(weights=weights)
+model = None
 
-# Remove the classification head (classifier)
-# MobileNetV2 structure: features -> avgpool -> classifier
-# We want the output of avgpool or just before classifier.
-# However, modifying the forward pass or replacing classifier is easier.
-# Let's replace the classifier with an Identity layer to get the features.
-class Identity(nn.Module):
-    def __init__(self):
-        super(Identity, self).__init__()
-        
-    def forward(self, x):
-        return x
+def load_model():
+    global model
+    if model is None:
+        print("Loading MobileNetV2 model...")
 
-# The classifier in MobileNetV2 is a Sequential(Dropout, Linear)
-# We replace it to get the 1280-dim vector
-model.classifier = Identity()
+        weights = models.MobileNet_V2_Weights.DEFAULT
+        model_instance = models.mobilenet_v2(weights=weights)
 
-model.eval() # Set to evaluation mode
-print("Model loaded.")
+        class Identity(nn.Module):
+            def forward(self, x):
+                return x
+
+        model_instance.classifier = Identity()
+        model_instance.eval()
+
+        model = model_instance
+        print("Model loaded successfully.")
 
 # Define preprocessing transforms
 preprocess = transforms.Compose([
