@@ -198,7 +198,7 @@
             }
 
             try {
-                const res = await fetch(`https://sherlock-lost-and-found.onrender.com/${id}/claim`, {
+                const res = await fetch(`https://sherlock-lost-and-found.onrender.com/api/items/${id}/claim`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
