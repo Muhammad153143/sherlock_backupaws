@@ -40,6 +40,12 @@ preprocess = transforms.Compose([
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
 ])
 
+@app.route("/", methods=["GET"])
+def home():
+    return jsonify({
+        "message": "Sherlock AI Service Running",
+        "endpoints": ["/health", "/embed", "/similarity"]
+    })
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint for backend connectivity verification"""
