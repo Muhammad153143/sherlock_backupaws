@@ -72,7 +72,7 @@ const generateEmailTemplate = (data) => {
 // 3. Verify Connection (Exported for server.js)
 const verifyConnection = async () => {
     // STRICT MODE: Fail if credentials are missing
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    if (!process.env.SMTP_EMAIL || !process.env.SMTP_PASS) {
         console.error('❌ FATAL ERROR: Missing EMAIL_USER or EMAIL_PASS in .env');
         console.error('   You must provide Real Gmail Credentials to start the server.');
         return false;
@@ -82,7 +82,7 @@ const verifyConnection = async () => {
 
     try {
         await transporter.verify();
-        console.log(`✅ SMTP Server Connection Verified (User: ${process.env.EMAIL_USER})`);
+        console.log(`✅ SMTP Server Connection Verified (User: ${process.env.SMTP_EMAIL})`);
         return true;
     } catch (error) {
         console.error('❌ SMTP Connection Failed:', error.message);
