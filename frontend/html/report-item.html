@@ -221,7 +221,7 @@
 
             try {
                  const token = localStorage.getItem('token');
-                 const res = await fetch('http://localhost:5000/api/items/check-duplicate', {
+                 const res = await fetch(' https://sherlock-lost-and-found.onrender.com/api/items/check-duplicate', {
                      method: 'POST',
                      headers: {
                          'Content-Type': 'application/json',
@@ -510,7 +510,7 @@
             try {
                 // Using fetch directly because fetchAPI helper might assume JSON content-type
                 const token = localStorage.getItem('token');
-                const res = await fetch('https://sherlock-lost-and-found.onrender.com', {
+                const res = await fetch('https://sherlock-lost-and-found.onrender.com/api/items', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`
