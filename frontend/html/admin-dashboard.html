@@ -212,7 +212,15 @@
                 row.style.display = text.includes(currentSearchTerm) ? '' : 'none';
             });
         }
+        function getImageUrl(url) {
+    if (!url) {
+        return 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200"><rect width="100%" height="100%" fill="#eef2f7"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#7f8c8d">No Image</text></svg>';
+    }
 
+    return url.startsWith("http")
+        ? url
+        : "https://sherlock-lost-and-found.onrender.com" + url;
+}
         async function loadDashboard() {
             try {
                 const items = await fetchAPI('/items/admin');
@@ -409,18 +417,11 @@ alt="Item">
                     return `
                     <tr>
                         <td>
-                          <img src="${item.imageUrl 
-const BASE_URL = "https://sherlock-lost-and-found.onrender.com";
-
-const imageUrl = item.imageUrl
-    ? (item.imageUrl.startsWith("http")
-        ? item.imageUrl
-        : BASE_URL + item.imageUrl)
-    : 'data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 width=%27300%27 height=%27300%27><rect width=%27100%25%27 height=%27100%25%27 fill=%27%23eef2f7%27/><text x=%2750%25%27 y=%2750%25%27 dominant-baseline=%27middle%27 text-anchor=%27middle%27 fill=%27%237f8c8d%27 font-size=%2718%27>No Image</text></svg>';
-<img src="${imageUrl}" class="table-thumb"> 
-                                 onclick="viewImage('${item._id}')"
-                                 alt="Item">
-                        </td>
+    <img src="${getImageUrl(item.imageUrl)}"
+         class="table-thumb"
+         onclick="viewImage('${item._id}')"
+         alt="Item">
+</td>
                         <td>${new Date(item.date).toLocaleDateString()}</td>
                         <td><span class="badge ${item.type}">${item.type.toUpperCase()}</span></td>
                         <td>${itemDetails}</td>
@@ -456,7 +457,7 @@ const imageUrl = item.imageUrl
             imageContent.innerHTML = `
                 <div>
                     <h3>${item.title}</h3>
-                    <img src="${item.imageUrl 
+                   <img src="${getImageUrl(item.imageUrl)}" style="width:300px;"> 
 ? const BASE_URL = "https://sherlock-lost-and-found.onrender.com";
 
 const imageUrl = item.imageUrl
@@ -488,7 +489,8 @@ const imageUrl = item.imageUrl
         return;
     }
 
-    const BASE_URL = "https://sherlock-lost-and-found.onrender.com";
+    const itemImage = getImageUrl(item.imageUrl);
+    const matchImage = getImageUrl(match.imageUrl);
 
     const itemImage = item.imageUrl.startsWith("http")
         ? item.imageUrl
@@ -526,7 +528,8 @@ const imageUrl = item.imageUrl
                 <div style="flex: 1; min-width: 250px;">
                     <h3>Original: ${item.title}</h3>
                    <img src="${item.imageUrl 
-?const BASE_URL = "https://sherlock-lost-and-found.onrender.com";
+?const itemImage = getImageUrl(item.imageUrl);
+const matchImage = getImageUrl(match.imageUrl);
 
 const imageUrl = item.imageUrl
     ? (item.imageUrl.startsWith("http")
