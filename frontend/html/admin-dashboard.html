@@ -283,10 +283,12 @@
                     return `
                     <tr>
                         <td>
-                            <img src="${item.imageUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJhcmlhbCIgZm9udC1zaXplPSIyMCIgZmlsbD0iIzU1NSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+Tm8gSW1hZ2U8L3RleHQ+PC9zdmc+'}" 
-                                 class="table-thumb" 
-                                 onclick="viewImage('${item._id}')"
-                                 alt="Item">
+                            <img src="${item.imageUrl 
+? 'https://sherlock-lost-and-found.onrender.com/' + item.imageUrl.replace(/^\/+/, '') 
+: 'data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 width=%27150%27 height=%27150%27><rect width=%27100%25%27 height=%27100%25%27 fill=%27%23eef2f7%27/><text x=%2750%25%27 y=%2750%25%27 dominant-baseline=%27middle%27 text-anchor=%27middle%27 fill=%27%237f8c8d%27 font-size=%2714%27>No Image</text></svg>'}"
+class="table-thumb"
+onclick="viewImage('${item._id}')"
+alt="Item">
                         </td>
                         <td>${new Date(item.date).toLocaleDateString()}</td>
                         <td><span class="badge ${item.type}">${item.type.toUpperCase()}</span></td>
@@ -442,7 +444,10 @@
             imageContent.innerHTML = `
                 <div>
                     <h3>${item.title}</h3>
-                    <img src="${item.imageUrl || 'data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 width=%27400%27 height=%27400%27><rect width=%27100%25%27 height=%27100%25%27 fill=%27%23eef2f7%27/><text x=%2750%25%27 y=%2750%25%27 dominant-baseline=%27middle%27 text-anchor=%27middle%27 fill=%27%237f8c8d%27 font-size=%2720%27 font-family=%27Segoe UI, Arial%27>No Image</text></svg>'}" style="max-width: 100%; max-height: 400px; border-radius: 10px; box-shadow: var(--shadow);">
+                    <img src="${item.imageUrl 
+? 'https://sherlock-lost-and-found.onrender.com/' + item.imageUrl.replace(/^\/+/, '') 
+: 'data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 width=%27400%27 height=%27400%27><rect width=%27100%25%27 height=%27100%25%27 fill=%27%23eef2f7%27/><text x=%2750%25%27 y=%2750%25%27 dominant-baseline=%27middle%27 text-anchor=%27middle%27 fill=%27%237f8c8d%27 font-size=%2720%27>No Image</text></svg>'}"
+style="max-width:100%;max-height:400px;">
                     <p style="margin-top: 1rem;">Status: <span class="badge ${item.status}">${item.status.toUpperCase()}</span></p>
                 </div>
             `;
