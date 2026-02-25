@@ -405,17 +405,19 @@ exports.updateItemStatus = async (req, res) => {
 
                 // Prepare attachments if image exists
                 const attachments = [];
-                // Only attach if it's a real file upload (starts with http)
-                if (foundItem.imageUrl && foundItem.imageUrl.startsWith('http')) {
-                    // Convert URL to local path for reliable sending
-                    // imageUrl format: http://host/uploads/filename.jpg
-                    const filename = foundItem.imageUrl.split('/').pop();
-                    const localPath = path.join(__dirname, '../uploads', filename);
+                if (foundItem.imageUrl) {
+                    const filename = path.basename(foundItem.imageUrl);
+                    const localPath = path.join(__dirname, '../', foundItem.imageUrl);
 
-                    attachments.push({
-                        filename: filename,
-                        path: localPath 
-                    });
+                    if (fs.existsSync(localPath)) {
+                        attachments.push({
+                            filename,
+                            path: localPath
+                        });
+                        console.log('📎 Attachment added:', localPath);
+                    } else {
+                        console.log('⚠️ File not found for attachment:', localPath);
+                    }
                 }
 
                 if (lostItem.studentEmail) {
