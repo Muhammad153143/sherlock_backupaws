@@ -197,6 +197,16 @@
             document.getElementById('adminName').textContent = `Hi, ${user.name}`;
         }
 
+        // Helper function for images
+        function getImageUrl(url) {
+            if (!url) {
+                return 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200"><rect width="100%" height="100%" fill="#eef2f7"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#7f8c8d">No Image</text></svg>';
+            }
+            return url.startsWith("http")
+                ? url
+                : "https://sherlock-lost-and-found.onrender.com" + url;
+        }
+
         // Search functionality
         let currentSearchTerm = '';
         
@@ -224,7 +234,6 @@
         async function loadDashboard() {
             try {
                 const items = await fetchAPI('/items/admin');
-                allItemsCache = items; // Update cache
                 
                 // Update stats
                 const total = items.length;
@@ -291,11 +300,19 @@
                     return `
                     <tr>
                         <td>
+<<<<<<< HEAD
     <img src="${getImageUrl(item.imageUrl)}"
          class="table-thumb"
          onclick="viewImage('${item._id}')"
          alt="Item">
 </td>
+=======
+                            <img src="${getImageUrl(item.imageUrl)}"
+                                 class="table-thumb"
+                                 onclick="viewImage('${item._id}')"
+                                 alt="Item">
+                        </td>
+>>>>>>> 0787984 (Updated image fix)
                         <td>${new Date(item.date).toLocaleDateString()}</td>
                         <td><span class="badge ${item.type}">${item.type.toUpperCase()}</span></td>
                         <td>${itemDetails}</td>
@@ -321,6 +338,7 @@
             }
         }
 
+<<<<<<< HEAD
         // Image Analysis Functions
         const imageModal = document.getElementById('imageModal');
         const imageContent = document.getElementById('imageModalContent');
@@ -328,9 +346,9 @@
         let allItemsCache = []; // To easily find items for comparison without refetching
 
 
+=======
+>>>>>>> 0787984 (Updated image fix)
         async function getItemById(id) {
-            // Helper since we don't have a direct API for one item yet or just use the admin list
-            // Optimization: Just re-fetch admin list and find.
              const items = await fetchAPI('/items/admin');
              return items.find(i => i._id === id);
         }
@@ -339,33 +357,40 @@
             const item = await getItemById(id);
             if (!item) return;
 
-            imageContent.innerHTML = `
+            document.getElementById('imageModalContent').innerHTML = `
                 <div>
                     <h3>${item.title}</h3>
+<<<<<<< HEAD
                    <img src="${getImageUrl(item.imageUrl)}" style="width:300px;"> 
+=======
+                    <img src="${getImageUrl(item.imageUrl)}" style="width:300px;">
+>>>>>>> 0787984 (Updated image fix)
                     <p style="margin-top: 1rem;">Status: <span class="badge ${item.status}">${item.status.toUpperCase()}</span></p>
                 </div>
             `;
             
-            imageActions.innerHTML = `
+            document.getElementById('imageModalActions').innerHTML = `
                 ${item.status === 'pending' ? `<button class="action-btn btn-verify" onclick="updateStatus('${item._id}', 'verified'); closeImageModal();">✅ Verify Image & Item</button>` : ''}
                 <button class="action-btn btn-reject" onclick="deleteItem('${item._id}'); closeImageModal();">❌ Reject & Delete</button>
             `;
             
-            imageModal.style.display = 'block';
+            document.getElementById('imageModal').style.display = 'block';
         }
 
         async function compareImages(itemId, matchId) {
+            const item = await getItemById(itemId);
+            const allItems = await fetchAPI('/items/admin');
+            const match = allItems.find(i => i._id === matchId);
 
-    const item = await getItemById(itemId);
-    const allItems = await fetchAPI('/items/admin');
-    const match = allItems.find(i => i._id === matchId);
+            if (!item || !match) {
+                alert('Could not load item details.');
+                return;
+            }
 
-    if (!item || !match) {
-        alert('Could not load item details.');
-        return;
-    }
+            const itemImage = getImageUrl(item.imageUrl);
+            const matchImage = getImageUrl(match.imageUrl);
 
+<<<<<<< HEAD
     const itemImage = getImageUrl(item.imageUrl);
     const matchImage = getImageUrl(match.imageUrl);
 
@@ -391,9 +416,31 @@
     imageModal.style.display = 'block';
 }
 
+=======
+            document.getElementById('imageModalContent').innerHTML = `
+                <div style="flex:1;">
+                    <h3>Original: ${item.title}</h3>
+                    <img src="${itemImage}" style="width:300px;">
+                    <p>Type: ${item.type}</p>
+                </div>
+                <div style="display: flex; align-items: center; font-size: 2rem;">🆚</div>
+                <div style="flex:1;">
+                    <h3>Match: ${match.title}</h3>
+                    <img src="${matchImage}" style="width:300px;">
+                    <p>Type: ${match.type}</p>
+                </div>
+            `;
+
+            document.getElementById('imageModalActions').innerHTML = `
+                <button class="action-btn btn-match" style="padding: 1rem 2rem; font-size: 1.2rem;" onclick="confirmMatch('${item._id}', '${match._id}'); closeImageModal();">✅ Confirm Match</button>
+            `;
+
+            document.getElementById('imageModal').style.display = 'block';
+        }
+>>>>>>> 0787984 (Updated image fix)
 
         function closeImageModal() {
-            imageModal.style.display = 'none';
+            document.getElementById('imageModal').style.display = 'none';
         }
 
         async function updateStatus(id, status) {
