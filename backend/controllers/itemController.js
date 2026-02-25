@@ -7,7 +7,7 @@ const { findMatches } = require('../utils/matchService');
 const { sendEmail } = require('../utils/emailService');
 
 // AI Service URL
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:5001';
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'https://sherlock-ai-service.onrender.com';
 const { isAIAvailable, buildErrorDetails } = require('../utils/aiService');
 let aiEmbedErrorLogged = false;
 
