@@ -222,15 +222,7 @@
                 row.style.display = text.includes(currentSearchTerm) ? '' : 'none';
             });
         }
-        function getImageUrl(url) {
-    if (!url) {
-        return 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200"><rect width="100%" height="100%" fill="#eef2f7"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#7f8c8d">No Image</text></svg>';
-    }
 
-    return url.startsWith("http")
-        ? url
-        : "https://sherlock-lost-and-found.onrender.com" + url;
-}
         async function loadDashboard() {
             try {
                 const items = await fetchAPI('/items/admin');
@@ -300,19 +292,11 @@
                     return `
                     <tr>
                         <td>
-<<<<<<< HEAD
-    <img src="${getImageUrl(item.imageUrl)}"
-         class="table-thumb"
-         onclick="viewImage('${item._id}')"
-         alt="Item">
-</td>
-=======
                             <img src="${getImageUrl(item.imageUrl)}"
                                  class="table-thumb"
                                  onclick="viewImage('${item._id}')"
                                  alt="Item">
                         </td>
->>>>>>> 0787984 (Updated image fix)
                         <td>${new Date(item.date).toLocaleDateString()}</td>
                         <td><span class="badge ${item.type}">${item.type.toUpperCase()}</span></td>
                         <td>${itemDetails}</td>
@@ -338,16 +322,12 @@
             }
         }
 
-<<<<<<< HEAD
         // Image Analysis Functions
         const imageModal = document.getElementById('imageModal');
         const imageContent = document.getElementById('imageModalContent');
         const imageActions = document.getElementById('imageModalActions');
         let allItemsCache = []; // To easily find items for comparison without refetching
 
-
-=======
->>>>>>> 0787984 (Updated image fix)
         async function getItemById(id) {
              const items = await fetchAPI('/items/admin');
              return items.find(i => i._id === id);
@@ -360,11 +340,7 @@
             document.getElementById('imageModalContent').innerHTML = `
                 <div>
                     <h3>${item.title}</h3>
-<<<<<<< HEAD
-                   <img src="${getImageUrl(item.imageUrl)}" style="width:300px;"> 
-=======
                     <img src="${getImageUrl(item.imageUrl)}" style="width:300px;">
->>>>>>> 0787984 (Updated image fix)
                     <p style="margin-top: 1rem;">Status: <span class="badge ${item.status}">${item.status.toUpperCase()}</span></p>
                 </div>
             `;
@@ -390,33 +366,6 @@
             const itemImage = getImageUrl(item.imageUrl);
             const matchImage = getImageUrl(match.imageUrl);
 
-<<<<<<< HEAD
-    const itemImage = getImageUrl(item.imageUrl);
-    const matchImage = getImageUrl(match.imageUrl);
-
-    imageContent.innerHTML = `
-        <div style="flex:1;">
-            <h3>${item.title}</h3>
-            <img src="${itemImage}" style="width:300px;">
-        </div>
-
-        <div style="flex:1;">
-            <h3>${match.title}</h3>
-            <img src="${matchImage}" style="width:300px;">
-        </div>
-    `;
-
-    imageActions.innerHTML = `
-        <button class="action-btn btn-match"
-        onclick="confirmMatch('${item._id}','${match._id}')">
-        Confirm Match
-        </button>
-    `;
-
-    imageModal.style.display = 'block';
-}
-
-=======
             document.getElementById('imageModalContent').innerHTML = `
                 <div style="flex:1;">
                     <h3>Original: ${item.title}</h3>
@@ -437,7 +386,6 @@
 
             document.getElementById('imageModal').style.display = 'block';
         }
->>>>>>> 0787984 (Updated image fix)
 
         function closeImageModal() {
             document.getElementById('imageModal').style.display = 'none';
