@@ -404,7 +404,7 @@ exports.updateItemStatus = async (req, res) => {
 // Prepare attachments if image exists
                 const attachments = [];
 
-        if (foundItem.imageUrl && foundItem.imageUrl.startsWith('http')) {
+    if (foundItem.imageUrl && foundItem.imageUrl.startsWith('http')) {
     attachments.push({
         filename: 'found-item.jpg',
         path: foundItem.imageUrl
