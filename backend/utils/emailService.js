@@ -75,7 +75,9 @@ const transporter = nodemailer.createTransport({
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS
-  }
+  },
+  debug: true,
+  logger: true
 });
 
 // Verify SMTP connection function
@@ -118,7 +120,16 @@ exports.sendEmail = async ({
     return info;
 
   } catch (error) {
-    console.error("❌ Email sending failed:", error);
+    console.error("❌ Email sending failed:", error.message);
+    console.error("❌ Full error details:", error);
+    // More descriptive error for frontend
+    if (error.code === 'EAUTH') {
+      throw new Error('SMTP authentication failed - check credentials');
+    } else if (error.code === 'ECONNREFUSED') {
+      throw new Error('SMTP connection refused - check host and port');
+    } else if (error.code === 'ENOTFOUND') {
+      throw new Error('SMTP host not found - check SMTP_HOST');
+    }
     throw error;
   }
 };
