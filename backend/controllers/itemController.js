@@ -402,13 +402,26 @@ exports.updateItemStatus = async (req, res) => {
                 const foundItem = item.type === 'found' ? item : matchedItem;
 
 // Prepare attachments if image exists
-                const attachments = [];
+                const axios = require('axios');
 
-    if (foundItem.imageUrl && foundItem.imageUrl.startsWith('http')) {
-    attachments.push({
-        filename: 'found-item.jpg',
-        path: foundItem.imageUrl
-    });
+const attachments = [];
+
+if (foundItem.imageUrl && foundItem.imageUrl.startsWith('http')) {
+    try {
+        const imageResponse = await axios.get(foundItem.imageUrl, {
+            responseType: 'arraybuffer'
+        });
+
+        attachments.push({
+            filename: 'found-item.jpg',
+            content: imageResponse.data
+        });
+
+        console.log("✅ Image attached successfully");
+
+    } catch (err) {
+        console.error("❌ Failed to download Cloudinary image:", err.message);
+    }
 }
 
                 if (lostItem.studentEmail) {
