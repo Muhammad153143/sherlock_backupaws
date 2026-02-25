@@ -7,7 +7,7 @@ const { findMatches } = require('../utils/matchService');
 const { sendEmail } = require('../utils/emailService');
 
 // AI Service URL
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'https://sherlock-ai-service.onrender.com';
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:5001';
 const { isAIAvailable, buildErrorDetails } = require('../utils/aiService');
 let aiEmbedErrorLogged = false;
 
@@ -159,11 +159,9 @@ exports.createItem = async (req, res) => {
         
         let imageUrl;
         
-      if (req.file) {
-
-    imageUrl = req.file.path;
-
-}
+        if (req.file) {
+            imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+        }
 
         const itemData = {
             ...req.body,
@@ -405,19 +403,17 @@ exports.updateItemStatus = async (req, res) => {
 
                 // Prepare attachments if image exists
                 const attachments = [];
-                if (foundItem.imageUrl) {
-                    const filename = path.basename(foundItem.imageUrl);
-                    const localPath = path.join(__dirname, '../', foundItem.imageUrl);
+                // Only attach if it's a real file upload (starts with http)
+                if (foundItem.imageUrl && foundItem.imageUrl.startsWith('http')) {
+                    // Convert URL to local path for reliable sending
+                    // imageUrl format: http://host/uploads/filename.jpg
+                    const filename = foundItem.imageUrl.split('/').pop();
+                    const localPath = path.join(__dirname, '../uploads', filename);
 
-                    if (fs.existsSync(localPath)) {
-                        attachments.push({
-                            filename,
-                            path: localPath
-                        });
-                        console.log('📎 Attachment added:', localPath);
-                    } else {
-                        console.log('⚠️ File not found for attachment:', localPath);
-                    }
+                    attachments.push({
+                        filename: filename,
+                        path: localPath 
+                    });
                 }
 
                 if (lostItem.studentEmail) {
@@ -426,7 +422,7 @@ exports.updateItemStatus = async (req, res) => {
                             email: lostItem.studentEmail,
                             subject: '🎉 Good News! Your Lost Item Found – SherLock',
                             templateData: {
-                                title: `🎉 Good News! Your Lost Item Found – SherLock`,
+                                title: `We have found a match for your lost item: "${lostItem.title}"`,
                                 name: lostItem.studentName,
                                 details: {
                                     'Found Item': foundItem.title,
@@ -436,7 +432,7 @@ exports.updateItemStatus = async (req, res) => {
                                     'Match ID': `#${foundItem._id.toString().slice(-6).toUpperCase()}`
                                 },
                                 actionText: 'Visit Admin Office',
-                                actionUrl: '#'
+                                actionUrl: '#' // In real app, this could be a claim URL
                             },
                             type: 'match_notification',
                             triggeredBy: req.user.id,
