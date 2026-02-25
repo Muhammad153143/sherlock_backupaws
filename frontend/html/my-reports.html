@@ -36,17 +36,22 @@
                     return;
                 }
 
-              list.innerHTML = items.map(item => `
+              list.innerHTML = items.map(item => {
 
+    const imageUrl = item.imageUrl && item.imageUrl.startsWith("http")
+        ? item.imageUrl
+        : "https://sherlock-lost-and-found.onrender.com" + item.imageUrl;
+
+    return `
     <div class="card">
 
         <img 
-            src="${item.imageUrl}" 
+            src="${imageUrl}" 
             style="width:200px;height:150px;object-fit:cover;margin-bottom:10px;"
             onerror="this.src='https://via.placeholder.com/200x150?text=No+Image'"
         />
 
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
             <div>
                 <h3>${item.title} 
                     <span class="badge ${item.status}">
@@ -60,18 +65,18 @@
                 <p><strong>Location:</strong> ${item.location} | 
                 <strong>Date:</strong> ${new Date(item.date).toLocaleDateString()}</p>
 
-                <p style="margin-top: 0.5rem;">${item.description}</p>
+                <p style="margin-top:0.5rem;">${item.description}</p>
             </div>
 
             <button onclick="deleteItem('${item._id}')" 
-                class="btn btn-secondary" 
-                style="background-color: var(--danger); font-size: 0.8rem; padding: 0.5rem;">
+                class="btn btn-secondary"
+                style="background-color:var(--danger);font-size:0.8rem;padding:0.5rem;">
                 Delete
             </button>
         </div>
     </div>
-
-`).join('');
+    `;
+}).join('');
             } catch (error) {
                 console.error(error);
                 document.getElementById('my-items-list').innerHTML = '<p>Error loading items.</p>';
