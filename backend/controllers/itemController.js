@@ -426,7 +426,7 @@ exports.updateItemStatus = async (req, res) => {
                             email: lostItem.studentEmail,
                             subject: '🎉 Good News! Your Lost Item Found – SherLock',
                             templateData: {
-                                title: `We have found a match for your lost item: "${lostItem.title}"`,
+                                title: `🎉 Good News! Your Lost Item Found – SherLock`,
                                 name: lostItem.studentName,
                                 details: {
                                     'Found Item': foundItem.title,
@@ -436,7 +436,7 @@ exports.updateItemStatus = async (req, res) => {
                                     'Match ID': `#${foundItem._id.toString().slice(-6).toUpperCase()}`
                                 },
                                 actionText: 'Visit Admin Office',
-                                actionUrl: '#' // In real app, this could be a claim URL
+                                actionUrl: '#'
                             },
                             type: 'match_notification',
                             triggeredBy: req.user.id,
