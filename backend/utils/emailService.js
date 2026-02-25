@@ -78,6 +78,19 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+// Verify SMTP connection function
+exports.verifyConnection = async () => {
+  try {
+    // Test the connection
+    await transporter.verify();
+    console.log("✅ SMTP Connection Verified Successfully");
+    return true;
+  } catch (error) {
+    console.error("❌ SMTP Connection Failed:", error.message);
+    return false;
+  }
+};
+
 exports.sendEmail = async ({
   email,
   subject,
