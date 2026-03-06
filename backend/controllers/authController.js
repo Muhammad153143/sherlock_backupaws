@@ -113,7 +113,8 @@ exports.forgotPassword = async (req, res) => {
 
         await user.save({ validateBeforeSave: false });
 
-        const resetUrl = `${process.env.FRONTEND_URL}/reset-password.html?token=${resetToken}`;
+        const resetUrl =
+            `${process.env.FRONTEND_URL}/reset-password.html?token=${resetToken}`;
 
         await sendEmail({
             email: user.email,
@@ -134,10 +135,7 @@ exports.forgotPassword = async (req, res) => {
 
     } catch (error) {
         console.error("Forgot Password Error:", error);
-
-        res.status(500).json({
-            message: "Server error"
-        });
+        res.status(500).json({ message: "Server Error" });
     }
 };
 
