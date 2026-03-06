@@ -89,7 +89,7 @@ exports.getMe = async (req, res) => {
     }
 };
 
-exports.forgotPassword = async (req, res, next) => {
+exports.forgotPassword = async (req, res) => {
     try {
 
         const { email } = req.body;
@@ -102,7 +102,6 @@ exports.forgotPassword = async (req, res, next) => {
             });
         }
 
-        // create reset token
         const resetToken = crypto.randomBytes(32).toString("hex");
 
         user.resetPasswordToken = crypto
@@ -134,8 +133,11 @@ exports.forgotPassword = async (req, res, next) => {
         });
 
     } catch (error) {
-        console.error(error);
-        next(error);
+        console.error("Forgot Password Error:", error);
+
+        res.status(500).json({
+            message: "Server error"
+        });
     }
 };
 
