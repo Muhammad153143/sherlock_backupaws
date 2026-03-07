@@ -114,7 +114,7 @@ exports.forgotPassword = async (req, res) => {
         await user.save({ validateBeforeSave: false });
 
         const resetURL =
-`https://sherlock-lost-and-founddd.vercel.app/reset-password.html?token=${resetToken}`;
+`https://sherlock-lost-and-found.vercel.app/reset-password.html?token=${resetToken}`;
 
         await sendEmail({
             email: user.email,
