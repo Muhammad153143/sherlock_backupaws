@@ -113,8 +113,7 @@ exports.forgotPassword = async (req, res) => {
 
         await user.save();
 
-        const resetUrl =
-            `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+        const resetURL = `https://sherlock-lost-and-founddd.vercel.app//reset-password.html?token=${resetToken}`;
 
         await sendEmail({
             email: user.email,
