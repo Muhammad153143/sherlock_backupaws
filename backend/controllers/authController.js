@@ -138,30 +138,30 @@ exports.forgotPassword = async (req, res) => {
     }
 };
 
-exports.resetPassword = async (req, res) => {
-    const { token } = req.params;
-    const { password, confirmPassword } = req.body;
-    try {
-        if (!password || !confirmPassword) {
-            return res.status(400).json({ message: 'Password and confirm password required' });
-        }
-        if (password !== confirmPassword) {
-            return res.status(400).json({ message: 'Passwords do not match' });
-        }
-        const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
-        const user = await User.findOne({
-            resetPasswordToken: hashedToken,
-            resetPasswordExpire: { $gt: Date.now() }
-        }).select('+password');
-        if (!user) {
-            return res.status(400).json({ message: 'Invalid or expired token' });
-        }
-        user.password = password;
-        user.resetPasswordToken = undefined;
-        user.resetPasswordExpire = undefined;
-        await user.save();
-        res.status(200).json({ message: 'Password updated successfully' });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+exports.forgotPassword = async (req, res) => {
+  try {
+
+    const user = await User.findOne({ email: req.body.email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
+
+    const resetToken = user.createPasswordResetToken();
+    await user.save({ validateBeforeSave: false });
+
+    const resetURL = `${process.env.FRONTEND_URL}/reset-password.html?token=${resetToken}`;
+
+    await sendEmail({
+      email: user.email,
+      subject: "Password Reset",
+      message: `Reset your password: ${resetURL}`
+    });
+
+    res.status(200).json({ message: "Reset link sent to email" });
+
+  } catch (error) {
+    console.error("Forgot Password Error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
 };
