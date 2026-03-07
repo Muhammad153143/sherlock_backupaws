@@ -113,7 +113,7 @@ exports.forgotPassword = async (req, res) => {
 
         await user.save();
 
-        const resetURL = `https://sherlock-lost-and-founddd.vercel.app//reset-password.html?token=${resetToken}`;
+        const resetURL = `https://sherlock-lost-and-founddd.vercel.app/reset-password.html?token=${resetToken}`;
 
         await sendEmail({
             email: user.email,
@@ -122,7 +122,7 @@ exports.forgotPassword = async (req, res) => {
                 title: "Reset your password",
                 name: user.name,
                 actionText: "Reset Password",
-                actionUrl: resetUrl
+                actionUrl: resetURL
             },
             type: "password_reset"
         });
