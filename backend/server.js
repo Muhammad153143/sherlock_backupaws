@@ -21,7 +21,7 @@ app.use(helmet({
 
 app.use(cors({
     origin: [
-        "https://sherlock-lost-and-found1.vercel.app",
+        "https://sherlock-lost-and-found3.vercel.app",
         "http://localhost:3000"
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
