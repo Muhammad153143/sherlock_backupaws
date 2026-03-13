@@ -111,8 +111,8 @@ mongoose.connect(process.env.MONGO_URI)
 .catch(err => console.error('❌ MongoDB Connection Error:', err));
 
 // Routes
-app.use('/api/auth', require('./routes/authRoutes'));
-app.use('/api/items', require('./routes/itemRoutes'));
+app.use('/api/v1/auth', require('./routes/authRoutes'));
+app.use('/api/v1/items', require('./routes/itemRoutes'));
 app.get('/reset-password/:token', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/html/reset-password.html'));
 });
