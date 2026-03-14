@@ -225,7 +225,7 @@
 
         async function loadDashboard() {
             try {
-                const items = await fetchAPI('/items/admin');
+                const items = await fetchAPI('/v1/items/admin');
                 
                 // Update stats
                 const total = items.length;
@@ -329,7 +329,7 @@
         let allItemsCache = []; // To easily find items for comparison without refetching
 
         async function getItemById(id) {
-             const items = await fetchAPI('/items/admin');
+             const items = await fetchAPI('/v1/items/admin');
              return items.find(i => i._id === id);
         }
 
@@ -355,7 +355,7 @@
 
         async function compareImages(itemId, matchId) {
             const item = await getItemById(itemId);
-            const allItems = await fetchAPI('/items/admin');
+            const allItems = await fetchAPI('/v1/items/admin');
             const match = allItems.find(i => i._id === matchId);
 
             if (!item || !match) {
@@ -393,7 +393,7 @@
 
         async function updateStatus(id, status) {
             try {
-                await fetchAPI(`/items/${id}`, {
+                await fetchAPI(`/v1/items/${id}`, {
                     method: 'PUT',
                     body: JSON.stringify({ status })
                 });
@@ -406,7 +406,7 @@
         async function confirmMatch(itemId, matchId) {
             if(!confirm('Confirm this match? This will mark both items as resolved and send an email.')) return;
             try {
-                await fetchAPI(`/items/${itemId}`, {
+                await fetchAPI(`/v1/items/${itemId}`, {
                     method: 'PUT',
                     body: JSON.stringify({ matchedWithId: matchId })
                 });
@@ -420,7 +420,7 @@
         async function deleteItem(id) {
             if(!confirm('Permanently delete this item?')) return;
             try {
-                await fetchAPI(`/items/${id}`, { method: 'DELETE' });
+                await fetchAPI(`/v1/items/${id}`, { method: 'DELETE' });
                 loadDashboard();
             } catch (error) {
                 alert(error.message);
@@ -448,7 +448,7 @@
             const message = document.getElementById('emailMessage').value;
 
             try {
-                const res = await fetchAPI('/items/email', {
+                const res = await fetchAPI('/v1/items/email', {
                     method: 'POST',
                     body: JSON.stringify({ to, subject, message })
                 });
