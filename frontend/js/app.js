@@ -1,5 +1,5 @@
 // Base configuration
-const API_URL = 'https://sherlock-lost-and-found.onrender.com/api/v1';
+const API_URL = 'https://sherlock-lost-and-found.onrender.com/api/v1/auth/login';
 
 // Helper function to handle fetch errors
 async function fetchAPI(endpoint, options = {}) {
