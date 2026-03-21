@@ -89,7 +89,7 @@ mongoose.connect(process.env.MONGO_URI)
                     'Environment': 'Production'
                 },
                 actionText: 'Go to Dashboard',
-                actionUrl: 'https://sherlock-lost-and-found3-ins8anbb0-muhammad153143s-projects.vercel.app/admin-dashboard.html'
+                actionUrl: 'https://sherlock-lost-and-found3.vercel.app/admin-dashboard.html'
             },
             type: 'system_notification',
             triggeredBy: null
