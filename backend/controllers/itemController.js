@@ -15,7 +15,7 @@ let aiEmbedErrorLogged = false;
 // @access  Public
 exports.getItems = async (req, res) => {
     try {
-        console.log('📋 GET /api/v1/items - Fetching public items');
+        console.log('📋 GET /api/items - Fetching public items');
         const items = await Item.find({ status: { $in: ['verified', 'resolved'] } })
             .select('-contactInfo -studentName -rollNumber -studentEmail')
             .populate('user', 'name')
@@ -33,7 +33,7 @@ exports.getItems = async (req, res) => {
 // @access  Private/Admin
 exports.getAllItemsAdmin = async (req, res) => {
     try {
-        console.log('🔐 GET /api/v1/items/admin - Admin requesting all items');
+        console.log('🔐 GET /api/items/admin - Admin requesting all items');
         console.log('🔐 User:', req.user?.email, 'Role:', req.user?.role);
         const items = await Item.find()
             .populate('user', 'name email')
@@ -152,7 +152,7 @@ exports.verifyClaim = async (req, res) => {
 // @access  Private
 exports.createItem = async (req, res) => {
     try {
-        console.log('📝 POST /api/v1/items - Creating new item');
+        console.log('📝 POST /api/items - Creating new item');
         console.log('📝 User:', req.user?.id);
         console.log('📝 Body:', JSON.stringify(req.body, null, 2));
         console.log('📝 File:', req.file ? req.file.path : 'No file');
