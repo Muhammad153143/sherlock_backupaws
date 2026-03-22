@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:5001';
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'https://sherlock-ai-service.onrender.com';
 
 let aiAvailable = false;
 
