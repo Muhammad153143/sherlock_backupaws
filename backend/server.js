@@ -46,7 +46,7 @@ const apiLimiter = rateLimit({
     legacyHeaders: false,
 });
 
-app.use('/api/v1', apiLimiter);
+app.use('/api/', apiLimiter);
 
 // Serve static files (uploads)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
