@@ -1,10 +1,10 @@
 const Item = require('../models/Item');
+const Chat = require('../models/Chat');
 const path = require('path');
 const fs = require('fs');
 const axios = require('axios');
 const FormData = require('form-data');
 const { findMatches } = require('../utils/matchService');
-const { sendEmail } = require('../utils/emailService');
 
 // AI Service URL
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'https://sherlock-ai-service.onrender.com';
@@ -55,6 +55,28 @@ exports.getMyItems = async (req, res) => {
     try {
         const items = await Item.find({ user: req.user.id }).sort({ createdAt: -1 });
         res.status(200).json(items);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Get single item
+// @route   GET /api/items/:id
+// @access  Private
+exports.getItem = async (req, res) => {
+    try {
+        const item = await Item.findById(req.params.id).populate('user', 'name email');
+
+        if (!item) {
+            return res.status(404).json({ message: 'Item not found' });
+        }
+
+        // Allow owner or admin
+        if (item.user._id.toString() !== req.user.id && req.user.role !== 'admin') {
+            return res.status(401).json({ message: 'Not authorized' });
+        }
+
+        res.status(200).json(item);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -398,58 +420,22 @@ exports.updateItemStatus = async (req, res) => {
                 matchedItem.status = 'resolved';
                 await matchedItem.save();
 
+                // Create Automated Chat Message
                 const lostItem = item.type === 'lost' ? item : matchedItem;
                 const foundItem = item.type === 'found' ? item : matchedItem;
 
-// Prepare attachments if image exists
-                const axios = require('axios');
+                const automatedMessage = `🎉 Good News! Your Lost Item Found – SherLock\n\nFound Item: ${foundItem.title}\nLocation Found: ${foundItem.location}\nDate Found: ${new Date(foundItem.date).toLocaleDateString()}\nCategory: ${foundItem.category}\nMatch ID: #${foundItem._id.toString().slice(-6).toUpperCase()}`;
 
-const attachments = [];
-
-if (foundItem.imageUrl && foundItem.imageUrl.startsWith('http')) {
-    try {
-        const imageResponse = await axios.get(foundItem.imageUrl, {
-            responseType: 'arraybuffer'
-        });
-
-        attachments.push({
-            filename: 'found-item.jpg',
-            content: imageResponse.data
-        });
-
-        console.log("✅ Image attached successfully");
-
-    } catch (err) {
-        console.error("❌ Failed to download Cloudinary image:", err.message);
-    }
-}
-
-                if (lostItem.studentEmail) {
-                    try {
-                        await sendEmail({
-                            email: lostItem.studentEmail,
-                            subject: '🎉 Good News! Your Lost Item Found – SherLock',
-                            templateData: {
-                                title: `We have found a match for your lost item: "${lostItem.title}"`,
-                                name: lostItem.studentName,
-                                details: {
-                                    'Found Item': foundItem.title,
-                                    'Location Found': foundItem.location,
-                                    'Date Found': new Date(foundItem.date).toLocaleDateString(),
-                                    'Category': foundItem.category,
-                                    'Match ID': `#${foundItem._id.toString().slice(-6).toUpperCase()}`
-                                },
-                                actionText: 'Visit Admin Office',
-                                actionUrl: '#' // In real app, this could be a claim URL
-                            },
-                            type: 'match_notification',
-                            triggeredBy: req.user.id,
-                            attachments
-                        });
-                    } catch (err) {
-                        console.error('❌ Match Email Notification Failed:', err.message);
-                        // We don't rollback status update, but we log the failure loudly
-                    }
+                try {
+                    await Chat.create({
+                        itemId: lostItem._id,
+                        senderId: req.user.id, // Admin
+                        receiverId: lostItem.user, // The user who lost the item
+                        message: automatedMessage
+                    });
+                    console.log('✅ Automated match message sent to chat');
+                } catch (chatErr) {
+                    console.error('❌ Failed to send automated chat message:', chatErr.message);
                 }
             }
         } 
@@ -483,38 +469,5 @@ exports.deleteItem = async (req, res) => {
         res.status(200).json({ id: req.params.id });
     } catch (error) {
         res.status(500).json({ message: error.message });
-    }
-};
-
-// @desc    Send manual email
-// @route   POST /api/items/email
-// @access  Private/Admin
-exports.sendManualEmail = async (req, res) => {
-    const { to, subject, message } = req.body;
-    
-    console.log('📨 Processing Manual Email Request');
-    console.log(`   To: ${to}, Subject: ${subject}`);
-    
-    try {
-        const result = await sendEmail({
-            email: to,
-            subject,
-            message, // Now supported by emailService
-            type: 'admin_manual',
-            triggeredBy: req.user.id
-        });
-        
-        console.log('✅ Manual Email Sent Successfully');
-        res.status(200).json({
-            success: true,
-            message: 'Email sent successfully',
-            messageId: result.messageId
-        });
-    } catch (error) {
-        console.error('❌ Manual Email Failed:', error.message);
-        res.status(500).json({ 
-            success: false,
-            message: 'Email delivery failed: ' + error.message 
-        });
     }
 };

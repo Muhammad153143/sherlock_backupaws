@@ -224,7 +224,7 @@
 
         async function loadRecentItems() {
             try {
-                const items = await fetchAPI('/v1/items'); // Public endpoint
+                const items = await fetchAPI('/items'); // Public endpoint
                 const grid = document.getElementById('items-grid');
                 
                 if (items.length === 0) {

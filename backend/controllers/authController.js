@@ -1,7 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const crypto = require('crypto');
-const { sendEmail } = require('../utils/emailService');
 
 // Generate JWT
 const generateToken = (id) => {
@@ -95,53 +94,7 @@ exports.getMe = async (req, res) => {
 };
 
 exports.forgotPassword = async (req, res) => {
-    try {
-
-        const { email } = req.body;
-
-        const user = await User.findOne({ email });
-
-        if (!user) {
-            return res.status(404).json({
-                message: "User not found"
-            });
-        }
-
-        const resetToken = crypto.randomBytes(32).toString("hex");
-
-        user.resetPasswordToken = crypto
-            .createHash("sha256")
-            .update(resetToken)
-            .digest("hex");
-
-        user.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
-
-        await user.save({ validateBeforeSave: false });
-
-        const resetURL =
-`https://sherlock-lost-and-found3.vercel.app/reset-password.html?token=${resetToken}`;
-
-        await sendEmail({
-            email: user.email,
-            subject: "Password Reset - SherLock",
-            templateData: {
-                title: "Reset your password",
-                name: user.name,
-                actionText: "Reset Password",
-                actionUrl: resetURL
-            },
-            type: "password_reset"
-        });
-
-        res.status(200).json({
-            success: true,
-            message: "Reset email sent"
-        });
-
-    } catch (error) {
-        console.error("Forgot Password Error:", error);
-        res.status(500).json({ message: "Server Error" });
-    }
+    res.status(403).json({ message: "Password reset via email is currently disabled. Please contact admin." });
 };
 exports.resetPassword = async (req, res) => {
     try {

@@ -48,7 +48,7 @@
             const password = document.getElementById('password').value;
 
             try {
-                const data = await fetchAPI('/v1/auth/register', {
+                const data = await fetchAPI('/auth/register', {
                     method: 'POST',
                     body: JSON.stringify({ name, email, password })
                 });

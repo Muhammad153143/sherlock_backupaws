@@ -9,17 +9,52 @@ const { initAIService } = require('./utils/aiService');
 
 dotenv.config();
 
+const http = require('http');
+const { Server } = require('socket.io');
+
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: "*", // Adjust as needed for production
+        methods: ["GET", "POST"]
+    }
+});
+
 const PORT = process.env.PORT || 5000;
 app.set('trust proxy', 1);
+
+// Socket.IO Logic
+io.on('connection', (socket) => {
+    console.log('🔌 New client connected:', socket.id);
+
+    socket.on('joinRoom', ({ itemId }) => {
+        socket.join(itemId);
+        console.log(`👤 User joined room: ${itemId}`);
+    });
+
+    socket.on('sendMessage', async (data) => {
+        // data: { itemId, senderId, receiverId, message }
+        const { itemId, message } = data;
+        
+        // Broadcast to room
+        io.to(itemId).emit('receiveMessage', data);
+        console.log(`💬 Message sent in room ${itemId}: ${message}`);
+    });
+
+    socket.on('disconnect', () => {
+        console.log('🔌 Client disconnected');
+    });
+});
 
 app.use(helmet({
     contentSecurityPolicy: false,
     crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 const allowedOrigins = [
-  "https://sherlock-lost-and-found3.vercel.app",
-  "http://localhost:3000"
+  process.env.FRONTEND_URL,
+  "http://localhost:3000",
+  "http://localhost:5000"
 ];
 
 app.use(cors({
@@ -52,54 +87,21 @@ app.use('/api/v1', apiLimiter);
 app.use('api/v1/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Serve Frontend
-app.use(express.static(path.join(__dirname, '../frontend/html')));
+app.use(express.static(path.join(__dirname, '../frontend')));
 app.use('/css', express.static(path.join(__dirname, '../frontend/css')));
 app.use('/js', express.static(path.join(__dirname, '../frontend/js')));
 app.use('/assets', express.static(path.join(__dirname, '../frontend/assets')));
 
-const { verifyConnection, sendEmail } = require('./utils/emailService');
+// Handle direct HTML requests
+app.get('/:page.html', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend', `${req.params.page}.html`));
+});
 
 // Database Connection
 mongoose.connect(process.env.MONGO_URI)
 .then(async () => {
     console.log('✅ MongoDB Connected');
     
-    // Verify Email Connection on Startup
-    console.log('🔄 Verifying SMTP Connection...');
-    const emailVerified = await verifyConnection();
-    
-    if (!emailVerified) {
-        console.error('❌ CRITICAL ERROR: SMTP Connection Failed.');
-        console.error('   Server cannot start without valid email credentials.');
-        process.exit(1); // Hard Fail as requested
-    }
-
-    // Send Startup Test Email
-    try {
-        console.log('🔄 Sending Startup Test Email...');
-        await sendEmail({
-             email: "skjuber0004@gmail.com", // Send to self (Admin)
-            subject: '🚀 SherLock System Online - SMTP Test',
-            templateData: {
-                title: 'System Startup Successful',
-                name: 'Administrator',
-                details: {
-                    'Status': 'Online',
-                    'Time': new Date().toLocaleString(),
-                    'Environment': 'Production'
-                },
-                actionText: 'Go to Dashboard',
-                actionUrl: 'https://sherlock-lost-and-found3.vercel.app/admin-dashboard.html'
-            },
-            type: 'system_notification',
-            triggeredBy: null
-        });
-        console.log('✅ Startup Test Email Sent Successfully!');
-    } catch (err) {
-        console.error('❌ Startup Test Email Failed:', err.message);
-        process.exit(1); // Fail if test email fails? User said "Application must FAIL to start if real credentials are missing". If verify passed but send failed, it's still a critical issue.
-    }
-
     // AI Service Health Check (non-blocking)
     try {
         await initAIService();
@@ -113,8 +115,9 @@ mongoose.connect(process.env.MONGO_URI)
 // Routes
 app.use('/api/v1/auth', require('./routes/authRoutes'));
 app.use('/api/v1/items', require('./routes/itemRoutes'));
+app.use('/api/v1/chat', require('./routes/chatRoutes'));
 app.get('/reset-password/:token', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/html/reset-password.html'));
+    res.sendFile(path.join(__dirname, '../frontend/reset-password.html'));
 });
 
 // Test Route
@@ -129,6 +132,6 @@ app.use((err, req, res, next) => {
 });
 
 // Start Server
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });

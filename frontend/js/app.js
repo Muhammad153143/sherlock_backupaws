@@ -1,5 +1,5 @@
 // Base configuration
-const API_URL = 'https://sherlock-lost-and-found.onrender.com/api';
+const API_URL = '/api/v1';
 
 // Helper function to handle fetch errors
 async function fetchAPI(endpoint, options = {}) {
@@ -74,4 +74,31 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         }
     }
+
+    // Add unread counts handling
+    if (token) {
+        updateUnreadCounts();
+        // Periodically check for new messages
+        setInterval(updateUnreadCounts, 10000);
+    }
 });
+
+async function updateUnreadCounts() {
+    try {
+        const unreadCounts = await fetchAPI('/chat/unread/counts');
+        const countMap = {};
+        unreadCounts.forEach(item => {
+            countMap[item._id] = item.count;
+        });
+
+        // Store globally for other scripts to use
+        window.unreadChatCounts = countMap;
+        
+        // Trigger UI update if function exists
+        if (typeof renderUnreadBadges === 'function') {
+            renderUnreadBadges();
+        }
+    } catch (err) {
+        console.error('Error fetching unread counts:', err);
+    }
+}

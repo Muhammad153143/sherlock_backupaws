@@ -75,6 +75,116 @@
             cursor: pointer;
         }
         .close:hover { color: black; }
+
+        /* Card Grid Layout */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 1.5rem;
+        }
+
+        .item-card {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            height: 100%;
+            border: 1px solid #eee;
+        }
+
+        .item-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .card-image-container {
+            height: 200px;
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+            background: #f0f2f5;
+        }
+
+        .card-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.5s ease;
+        }
+
+        .item-card:hover .card-image {
+            transform: scale(1.05);
+        }
+
+        .card-content {
+            padding: 1.5rem;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin: 0;
+        }
+
+        .card-badge-container {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .card-details {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            line-height: 1.5;
+        }
+
+        .card-footer {
+            padding: 1rem 1.5rem;
+            background: #f8f9fa;
+            border-top: 1px solid #eee;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .student-info-box {
+            background: #f0f8ff;
+            padding: 0.8rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            border-left: 3px solid var(--primary-color);
+        }
+
+        .matches-container {
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px dashed #ccc;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .card-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                gap: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -134,47 +244,9 @@
                 </div>
             </div>
 
-            <div style="overflow-x: auto;">
-                <table id="items-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Type</th>
-                            <th>Item Details</th>
-                            <th>Student Details</th>
-                            <th>Status</th>
-                            <th>Potential Matches</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr><td colspan="7" style="text-align:center;">Loading data... ⏳</td></tr>
-                    </tbody>
-                </table>
+            <div id="items-grid" class="card-grid">
+                <p style="text-align:center; grid-column: 1/-1;">Loading reports... ⏳</p>
             </div>
-        </div>
-    </div>
-
-    <!-- Email Modal -->
-    <div id="emailModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeEmailModal()">&times;</span>
-            <h2 style="margin-bottom: 1rem;">📧 Send Email</h2>
-            <form id="emailForm">
-                <div class="form-group">
-                    <label>To:</label>
-                    <input type="email" id="emailTo" required>
-                </div>
-                <div class="form-group">
-                    <label>Subject:</label>
-                    <input type="text" id="emailSubject" required>
-                </div>
-                <div class="form-group">
-                    <label>Message:</label>
-                    <textarea id="emailMessage" rows="5" required></textarea>
-                </div>
-                <button type="submit" class="btn">🚀 Send Email</button>
-            </form>
         </div>
     </div>
 
@@ -216,16 +288,16 @@
         });
 
         function filterTable() {
-            const rows = document.querySelectorAll('#items-table tbody tr');
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                row.style.display = text.includes(currentSearchTerm) ? '' : 'none';
+            const cards = document.querySelectorAll('.item-card');
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                card.style.display = text.includes(currentSearchTerm) ? 'flex' : 'none';
             });
         }
 
         async function loadDashboard() {
             try {
-                const items = await fetchAPI('/v1/items/admin');
+                const items = await fetchAPI('/items/admin');
                 
                 // Update stats
                 const total = items.length;
@@ -247,80 +319,115 @@
                     document.getElementById('chart-rejected').style.width = (rejected / total * 100) + '%';
                 }
 
-                // Update table
-                const tbody = document.querySelector('#items-table tbody');
+                // Update grid
+                const grid = document.getElementById('items-grid');
                 
                 if (items.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No reports found.</td></tr>';
+                    grid.innerHTML = '<p style="text-align:center; grid-column: 1/-1;">No reports found.</p>';
                     return;
                 }
 
-                tbody.innerHTML = items.map(item => {
+                grid.innerHTML = items.map(item => {
+                    const reporterUser = item.user;
                     const studentInfo = `
-                        <strong>${item.studentName || item.user?.name || 'N/A'}</strong><br>
-                        <small>${item.rollNumber || ''}</small><br>
-                        <small>${item.branch || ''}</small><br>
-                        <small>📞 ${item.contactInfo || 'N/A'}</small><br>
-                        ${item.studentEmail || item.user?.email ? `<span style="font-size:0.8rem; color:var(--primary-color); cursor:pointer;" onclick="openEmailModal('${item.studentEmail || item.user?.email}', 'SherLock Update: ${item.title}')">${item.studentEmail || item.user?.email} (Compose)</span>` : '<span style="font-size:0.8rem; color:#888;">No email</span>'}
+                        <div class="student-info-box">
+                            <strong>${item.studentName || reporterUser?.name || 'N/A'}</strong><br>
+                            <small>${item.rollNumber || ''}</small> | <small>${item.branch || ''}</small><br>
+                            <small>📞 ${item.contactInfo || 'N/A'}</small><br>
+                            <small>✉️ ${item.studentEmail || reporterUser?.email || 'N/A'}</small>
+                        </div>
                     `;
 
-                    const itemDetails = `
-                        <strong>${item.title}</strong><br>
-                        <small>🎨 ${item.color}</small><br>
-                        <small>📍 ${item.location}</small><br>
-                        ${item.verificationQuestions && item.verificationQuestions.length > 0 ? 
-                          `<small style="display: block; margin-top: 5px; padding: 5px; background: #f0f8ff; border-left: 3px solid var(--primary-color);">
-                             <strong>🔐 Verification Questions:</strong><br>
-                             ${item.verificationQuestions.map((q, i) => `Q${i+1}: ${q}`).join('<br>')}
-                           </small>` : 
-                          '<small style="color: #888;">No verification questions</small>'}
-                    `;
-
-                    let matchesHtml = 'None';
+                    let matchesHtml = '';
                     if (item.potentialMatches && item.potentialMatches.length > 0) {
-                        matchesHtml = item.potentialMatches.map(m => `
-                            <div style="background:#f0f3f8; padding:5px; margin-bottom:5px; border-radius:5px; font-size:0.85rem;">
-                                <strong>${m.title}</strong> (${m.type})<br>
-                                <button class="action-btn btn-match" onclick="compareImages('${item._id}', '${m._id}')">🔍 Compare & Match</button>
-                            </div>
-                        `).join('');
+                        matchesHtml = `
+                        <div class="matches-container">
+                            <h5 style="margin-bottom: 0.5rem;">🔍 Potential Matches:</h5>
+                            ${item.potentialMatches.map(m => `
+                                <div style="background:#f0f3f8; padding:5px; margin-bottom:5px; border-radius:5px; font-size:0.85rem; display:flex; justify-content:space-between; align-items:center;">
+                                    <span>${m.title}</span>
+                                    <button class="action-btn btn-match" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;" onclick="compareImages('${item._id}', '${m._id}')">Compare</button>
+                                </div>
+                            `).join('')}
+                        </div>`;
                     }
                     if (item.matchedWith) {
-                        matchesHtml = `<span class="badge resolved">Matched with: ${item.matchedWith.title}</span>`;
+                        matchesHtml = `<div class="matches-container"><span class="badge resolved">Matched with: ${item.matchedWith.title}</span></div>`;
                     }
 
                     return `
-                    <tr>
-                        <td>
-                            <img src="${getImageUrl(item.imageUrl)}"
-                                 class="table-thumb"
-                                 onclick="viewImage('${item._id}')"
-                                 alt="Item">
-                        </td>
-                        <td>${new Date(item.date).toLocaleDateString()}</td>
-                        <td><span class="badge ${item.type}">${item.type.toUpperCase()}</span></td>
-                        <td>${itemDetails}</td>
-                        <td>${studentInfo}</td>
-                        <td><span class="badge ${item.status}">${item.status.toUpperCase()}</span></td>
-                        <td>${matchesHtml}</td>
-                        <td>
+                    <div class="item-card" id="card-${item._id}">
+                        <div class="card-image-container">
+                            <img src="${getImageUrl(item.imageUrl)}" class="card-image" onclick="viewImage('${item._id}')" alt="Item">
+                            <div style="position: absolute; top: 10px; right: 10px;">
+                                <span class="badge ${item.type}">${item.type.toUpperCase()}</span>
+                            </div>
+                        </div>
+                        <div class="card-content">
+                            <div class="card-badge-container">
+                                <span class="badge ${item.status}">${item.status.toUpperCase()}</span>
+                                <small style="color: #888;">${new Date(item.date).toLocaleDateString()}</small>
+                            </div>
+                            <h3 class="card-title">${item.title}</h3>
+                            <div class="card-details">
+                                <small>🎨 Color: ${item.color}</small><br>
+                                <small>📍 Location: ${item.location}</small>
+                            </div>
+                            
+                            ${studentInfo}
+                            
+                            ${item.verificationQuestions && item.verificationQuestions.length > 0 ? 
+                              `<div style="font-size: 0.8rem; background: #fff8e1; padding: 0.8rem; border-radius: 8px; border-left: 4px solid #ffc107; margin-top: 0.5rem;">
+                                 <strong style="display: block; margin-bottom: 0.3rem;">🔐 Verification Questions:</strong>
+                                 <ul style="padding-left: 1.2rem; margin: 0;">
+                                   ${item.verificationQuestions.map(q => `<li>${q}</li>`).join('')}
+                                 </ul>
+                               </div>` : ''}
+
+                            ${matchesHtml}
+                        </div>
+                        <div class="card-footer">
                             ${item.status === 'pending' ? `<button class="action-btn btn-verify" onclick="updateStatus('${item._id}', 'verified')">Verify</button>` : ''}
                             ${item.status === 'verified' && !item.matchedWith ? `<button class="action-btn btn-resolve" onclick="updateStatus('${item._id}', 'resolved')">Manual Resolve</button>` : ''}
-                            <button class="action-btn btn-email" onclick="openEmailModal('${item.studentEmail || item.user?.email || ''}', 'Update regarding your lost item: ${item.title}')">📧 Email</button>
+                            <button class="action-btn btn-match" style="position:relative;" onclick="window.location.href='chat.html?itemId=${item._id}&userId=${reporterUser?._id || ''}'">
+                                💬 Chat
+                                <span class="unread-badge" id="unread-${item._id}" style="display:none; position:absolute; top:-8px; right:-8px; background:var(--danger); color:white; border-radius:50%; width:20px; height:20px; font-size:0.7rem; display:flex; align-items:center; justify-content:center;">0</span>
+                            </button>
                             <button class="action-btn btn-reject" onclick="deleteItem('${item._id}')">🗑</button>
-                        </td>
-                    </tr>
+                        </div>
+                    </div>
                     `;
                 }).join('');
 
                 // Re-apply search filter
                 if(currentSearchTerm) filterTable();
+                
+                // Trigger unread badges render
+                if (typeof renderUnreadBadges === 'function') renderUnreadBadges();
 
             } catch (error) {
                 console.error(error);
                 alert('Error loading dashboard: ' + error.message);
             }
         }
+
+        // Unread Badges Logic
+        window.renderUnreadBadges = function() {
+            if (!window.unreadChatCounts) return;
+            
+            Object.keys(window.unreadChatCounts).forEach(itemId => {
+                const badge = document.getElementById(`unread-${itemId}`);
+                if (badge) {
+                    const count = window.unreadChatCounts[itemId];
+                    if (count > 0) {
+                        badge.textContent = count > 9 ? '9+' : count;
+                        badge.style.display = 'flex';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            });
+        };
 
         // Image Analysis Functions
         const imageModal = document.getElementById('imageModal');
@@ -329,7 +436,7 @@
         let allItemsCache = []; // To easily find items for comparison without refetching
 
         async function getItemById(id) {
-             const items = await fetchAPI('/v1/items/admin');
+             const items = await fetchAPI('/items/admin');
              return items.find(i => i._id === id);
         }
 
@@ -355,7 +462,7 @@
 
         async function compareImages(itemId, matchId) {
             const item = await getItemById(itemId);
-            const allItems = await fetchAPI('/v1/items/admin');
+            const allItems = await fetchAPI('/items/admin');
             const match = allItems.find(i => i._id === matchId);
 
             if (!item || !match) {
@@ -381,7 +488,7 @@
             `;
 
             document.getElementById('imageModalActions').innerHTML = `
-                <button class="action-btn btn-match" style="padding: 1rem 2rem; font-size: 1.2rem;" onclick="confirmMatch('${item._id}', '${match._id}'); closeImageModal();">✅ Confirm Match</button>
+                <button class="action-btn btn-match" style="padding: 1rem 2rem; font-size: 1.2rem;" onclick="confirmMatch('${item._id}', '${match._id}'); closeImageModal();">✅ Confirm Match & Chat</button>
             `;
 
             document.getElementById('imageModal').style.display = 'block';
@@ -393,7 +500,7 @@
 
         async function updateStatus(id, status) {
             try {
-                await fetchAPI(`/v1/items/${id}`, {
+                await fetchAPI(`/items/${id}`, {
                     method: 'PUT',
                     body: JSON.stringify({ status })
                 });
@@ -404,14 +511,15 @@
         }
 
         async function confirmMatch(itemId, matchId) {
-            if(!confirm('Confirm this match? This will mark both items as resolved and send an email.')) return;
+            const item = await getItemById(itemId);
+            if(!confirm('Confirm this match? This will mark both items as resolved and open chat.')) return;
             try {
-                await fetchAPI(`/v1/items/${itemId}`, {
+                await fetchAPI(`/items/${itemId}`, {
                     method: 'PUT',
                     body: JSON.stringify({ matchedWithId: matchId })
                 });
-                alert('Match confirmed and emails sent! 📧');
-                loadDashboard();
+                alert('Match confirmed! Opening chat... 💬');
+                window.location.href = `chat.html?itemId=${itemId}&userId=${item.user?._id || ''}`;
             } catch (error) {
                 alert(error.message);
             }
@@ -420,54 +528,16 @@
         async function deleteItem(id) {
             if(!confirm('Permanently delete this item?')) return;
             try {
-                await fetchAPI(`/v1/items/${id}`, { method: 'DELETE' });
+                await fetchAPI(`/items/${id}`, { method: 'DELETE' });
                 loadDashboard();
             } catch (error) {
                 alert(error.message);
             }
         }
 
-        // Email Modal Logic
-        const modal = document.getElementById('emailModal');
-        const emailForm = document.getElementById('emailForm');
-
-        function openEmailModal(to, subject) {
-            document.getElementById('emailTo').value = to;
-            document.getElementById('emailSubject').value = subject || 'SherLock Update';
-            modal.style.display = 'block';
-        }
-
-        function closeEmailModal() {
-            modal.style.display = 'none';
-        }
-
-        emailForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const to = document.getElementById('emailTo').value;
-            const subject = document.getElementById('emailSubject').value;
-            const message = document.getElementById('emailMessage').value;
-
-            try {
-                const res = await fetchAPI('/v1/items/email', {
-                    method: 'POST',
-                    body: JSON.stringify({ to, subject, message })
-                });
-                
-                if (res.success) {
-                    alert(`✅ Email Sent Successfully!\nMessage ID: ${res.messageId}`);
-                    closeEmailModal();
-                } else {
-                    alert(res.message || 'Email processed.');
-                    closeEmailModal();
-                }
-            } catch (error) {
-                alert('❌ Error: ' + error.message);
-            }
-        });
-
         window.onclick = function(event) {
-            if (event.target == modal) {
-                closeEmailModal();
+            if (event.target == imageModal) {
+                closeImageModal();
             }
         }
 
