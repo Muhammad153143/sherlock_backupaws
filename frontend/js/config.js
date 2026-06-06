@@ -4,14 +4,14 @@ const isLocal =
 
 const CONFIG = {
     API_URL: isLocal
-        ? "http://localhost:5000/api/v1"
+        ? "http://sherlock-backend-env.eba-vi7tm3gu.eu-north-1.elasticbeanstalk.com/api/v1"
         : "/api/v1",
 
     AI_SERVICE_URL: isLocal
-        ? "http://localhost:10000"
+        ? "http://ai-serviceapp-env.eba-84cs83tr.eu-north-1.elasticbeanstalk.com"
         : "/ai",
 
     SOCKET_URL: isLocal
-        ? "http://localhost:5000"
+        ? "http://sherlock-backend-env.eba-vi7tm3gu.eu-north-1.elasticbeanstalk.com"
         : window.location.origin
 };
