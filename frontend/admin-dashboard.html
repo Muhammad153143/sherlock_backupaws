@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - SherLock</title>
-    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="./css/style.css">
     <style>
         .stats-grid {
             display: grid;
@@ -259,7 +259,8 @@
         </div>
     </div>
 
-    <script src="../js/app.js"></script>
+    <script src="./js/config.js"></script>
+    <script src="./js/app.js"></script>
     <script>
         // Ensure admin
         const { user } = checkAuth();
@@ -268,7 +269,18 @@
         } else {
             document.getElementById('adminName').textContent = `Hi, ${user.name}`;
         }
+     function openChat(itemId, userId = "") {
+    if (!itemId) {
+        alert("Item ID missing");
+        return;
+    }
 
+    const chatUrl = userId
+        ? `chat.html?itemId=${itemId}&userId=${userId}`
+        : `chat.html?itemId=${itemId}`;
+
+    window.location.href = chatUrl;
+}
         // Helper function for images
         function getImageUrl(url) {
             if (!url) {
@@ -355,6 +367,10 @@
                         matchesHtml = `<div class="matches-container"><span class="badge resolved">Matched with: ${item.matchedWith.title}</span></div>`;
                     }
 
+                    // ID Card Proof Info
+                    const hasIdProof = item.idCardProof && item.idCardProof.imageUrl;
+                    const proofStatus = item.reporterProofStatus || 'pending';
+
                     return `
                     <div class="item-card" id="card-${item._id}">
                         <div class="card-image-container">
@@ -366,30 +382,27 @@
                         <div class="card-content">
                             <div class="card-badge-container">
                                 <span class="badge ${item.status}">${item.status.toUpperCase()}</span>
+                                <span class="badge ${proofStatus}">ID: ${proofStatus.toUpperCase()}</span>
                                 <small style="color: #888;">${new Date(item.date).toLocaleDateString()}</small>
                             </div>
                             <h3 class="card-title">${item.title}</h3>
                             <div class="card-details">
                                 <small>🎨 Color: ${item.color}</small><br>
-                                <small>📍 Location: ${item.location}</small>
+                                <small>📍 Location: ${item.location}</small><br>
+                                <small>🪪 ID Proof: ${hasIdProof ? 'Uploaded' : 'Not Uploaded'}</small>
                             </div>
                             
                             ${studentInfo}
-                            
-                            ${item.verificationQuestions && item.verificationQuestions.length > 0 ? 
-                              `<div style="font-size: 0.8rem; background: #fff8e1; padding: 0.8rem; border-radius: 8px; border-left: 4px solid #ffc107; margin-top: 0.5rem;">
-                                 <strong style="display: block; margin-bottom: 0.3rem;">🔐 Verification Questions:</strong>
-                                 <ul style="padding-left: 1.2rem; margin: 0;">
-                                   ${item.verificationQuestions.map(q => `<li>${q}</li>`).join('')}
-                                 </ul>
-                               </div>` : ''}
 
                             ${matchesHtml}
                         </div>
                         <div class="card-footer">
-                            ${item.status === 'pending' ? `<button class="action-btn btn-verify" onclick="updateStatus('${item._id}', 'verified')">Verify</button>` : ''}
+                            ${hasIdProof ? `<button class="action-btn" style="background-color: #6c5ce7;" onclick="viewIdProof('${item._id}')">🪪 View ID</button>` : ''}
+                            ${hasIdProof && proofStatus === 'pending' ? `<button class="action-btn btn-verify" onclick="updateProofStatus('${item._id}', 'verified')">✅ Approve ID</button>` : ''}
+                            ${hasIdProof && proofStatus === 'pending' ? `<button class="action-btn btn-reject" onclick="updateProofStatus('${item._id}', 'rejected')">❌ Reject ID</button>` : ''}
+                            ${item.status === 'pending' ? `<button class="action-btn btn-verify" onclick="updateStatus('${item._id}', 'verified')">Verify Item</button>` : ''}
                             ${item.status === 'verified' && !item.matchedWith ? `<button class="action-btn btn-resolve" onclick="updateStatus('${item._id}', 'resolved')">Manual Resolve</button>` : ''}
-                            <button class="action-btn btn-match" style="position:relative;" onclick="window.location.href='chat.html?itemId=${item._id}&userId=${reporterUser?._id || ''}'">
+                            <button class="action-btn btn-match" style="position:relative;" onclick="openChat('${item._id}', '${reporterUser?._id || ''}')">
                                 💬 Chat
                                 <span class="unread-badge" id="unread-${item._id}" style="display:none; position:absolute; top:-8px; right:-8px; background:var(--danger); color:white; border-radius:50%; width:20px; height:20px; font-size:0.7rem; display:flex; align-items:center; justify-content:center;">0</span>
                             </button>
@@ -529,6 +542,70 @@
             if(!confirm('Permanently delete this item?')) return;
             try {
                 await fetchAPI(`/items/${id}`, { method: 'DELETE' });
+                loadDashboard();
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        // ID Card Proof Functions
+        async function viewIdProof(itemId) {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${CONFIG.API_URL}/items/${itemId}/proof`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load ID proof');
+                }
+
+                const data = await response.json();
+
+                if (data.message === 'ID proof not uploaded for this report') {
+                    alert('ID proof not uploaded for this report');
+                    return;
+                }
+
+                document.getElementById('imageModalContent').innerHTML = `
+                    <div>
+                        <h3>Student ID Card Proof</h3>
+                        <img src="${getImageUrl(data.idCardProof.imageUrl)}" style="width:100%; max-width:500px;">
+                        <p style="margin-top: 1rem;">Uploaded: ${new Date(data.idCardProof.uploadedAt).toLocaleString()}</p>
+                        <p>Status: <span class="badge ${data.reporterProofStatus}">${data.reporterProofStatus.toUpperCase()}</span></p>
+                    </div>
+                `;
+                
+                document.getElementById('imageModalActions').innerHTML = `
+                    ${data.reporterProofStatus === 'pending' ? `<button class="action-btn btn-verify" onclick="updateProofStatus('${itemId}', 'verified'); closeImageModal();">✅ Approve ID</button>` : ''}
+                    ${data.reporterProofStatus === 'pending' ? `<button class="action-btn btn-reject" onclick="updateProofStatus('${itemId}', 'rejected'); closeImageModal();">❌ Reject ID</button>` : ''}
+                `;
+                
+                document.getElementById('imageModal').style.display = 'block';
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        async function updateProofStatus(itemId, status) {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${CONFIG.API_URL}/items/${itemId}/proof-status`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ status })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to update proof status');
+                }
+
+                alert(`ID proof status updated to ${status}!`);
                 loadDashboard();
             } catch (error) {
                 alert(error.message);

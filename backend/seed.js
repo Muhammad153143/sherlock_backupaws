@@ -7,35 +7,55 @@ dotenv.config();
 mongoose.connect(process.env.MONGO_URI)
     .then(() => {
         console.log('✅ MongoDB Connected');
-        seedAdmin();
+        seedData();
     })
     .catch(err => console.error(err));
 
-const seedAdmin = async () => {
+const seedData = async () => {
     try {
-        // Check if admin exists by username
-        const adminExists = await User.findOne({ username: 'admin' });
-        
-        if (adminExists) {
+        // Check if admin exists
+        let adminUser = await User.findOne({ 
+            $or: [{ email: 'admin@gmail.com' }, { username: 'admin' }] 
+        });
+        if (!adminUser) {
+            adminUser = await User.create({
+                name: 'System Admin',
+                username: 'admin123',
+                email: 'admin@gmail.com',
+                password: 'Admin@123',
+                role: 'admin'
+            });
+            console.log('✅ Admin user created successfully!');
+            console.log('📧 Email: admin@gmail.com');
+            console.log('🔑 Password: Admin@123');
+            console.log('👤 Username: admin123');
+        } else {
             console.log('⚠️ Admin user already exists');
-            process.exit();
         }
 
-        // Create Admin
-        await User.create({
-            name: 'System Admin',
-            username: 'admin',
-            email: 'admin@sherlock.edu', // Official admin email
-            password: 'Admin@123', // Will be hashed by pre-save hook
-            role: 'admin'
+        // Check if test user exists
+        let testUser = await User.findOne({ 
+            $or: [{ email: 'testuser@gmail.com' }, { username: 'testuser' }] 
         });
+        if (!testUser) {
+            testUser = await User.create({
+                name: 'Test User',
+                username: 'testuser123',
+                email: 'testuser@gmail.com',
+                password: 'Test@123',
+                role: 'user'
+            });
+            console.log('✅ Test user created successfully!');
+            console.log('📧 Email: testuser@gmail.com');
+            console.log('🔑 Password: Test@123');
+            console.log('👤 Username: testuser123');
+        } else {
+            console.log('⚠️ Test user already exists');
+        }
 
-        console.log('✅ Admin user created successfully!');
-        console.log('👤 Username: admin');
-        console.log('🔑 Password: Admin@123');
         process.exit();
     } catch (error) {
-        console.error('❌ Error seeding admin:', error);
+        console.error('❌ Error seeding data:', error);
         process.exit(1);
     }
 };

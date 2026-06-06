@@ -9,7 +9,8 @@ const {
     updateItemStatus, 
     deleteItem,
     checkDuplicate,
-    verifyClaim
+    getItemProof,
+    updateProofStatus
 } = require('../controllers/itemController');
 const { protect, admin } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
@@ -20,9 +21,10 @@ router.get('/admin', protect, admin, getAllItemsAdmin);
 router.get('/myitems', protect, getMyItems);
 router.get('/:id', protect, getItem);
 router.post('/check-duplicate', protect, checkDuplicate);
-router.post('/:id/claim', protect, verifyClaim);
-router.post('/', protect, upload.single('image'), duplicateMiddleware, createItem);
+router.post('/', protect, upload.fields([{ name: 'image', maxCount: 1 }, { name: 'idCardPhoto', maxCount: 1 }]), duplicateMiddleware, createItem);
 router.put('/:id', protect, admin, updateItemStatus);
 router.delete('/:id', protect, deleteItem);
+router.get('/:id/proof', protect, admin, getItemProof);
+router.patch('/:id/proof-status', protect, admin, updateProofStatus);
 
 module.exports = router;

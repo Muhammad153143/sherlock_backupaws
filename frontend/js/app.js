@@ -1,16 +1,13 @@
-// Base configuration
-const API_URL = '/api/v1';
-
 // Helper function to handle fetch errors
 async function fetchAPI(endpoint, options = {}) {
     const token = localStorage.getItem('token');
     const headers = {
-        'Content-Type': 'application/json',
+        ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
         ...(token && { 'Authorization': `Bearer ${token}` }),
         ...options.headers
     };
 
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    const response = await fetch(`${CONFIG.API_URL}${endpoint}`, {
         ...options,
         headers
     });
@@ -35,8 +32,23 @@ async function fetchAPI(endpoint, options = {}) {
 // Check auth status
 function checkAuth() {
     const token = localStorage.getItem('token');
-    const user = JSON.parse(localStorage.getItem('user'));
-    return { token, user };
+    const userData = localStorage.getItem('user');
+
+    if (!token || !userData) {
+        return { token: null, user: null };
+    }
+
+    try {
+        return {
+            token,
+            user: JSON.parse(userData)
+        };
+    } catch (error) {
+        console.error("Invalid user data:", error);
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        return { token: null, user: null };
+    }
 }
 
 // Logout
@@ -82,6 +94,20 @@ document.addEventListener('DOMContentLoaded', () => {
         setInterval(updateUnreadCounts, 10000);
     }
 });
+
+// Open chat function
+function openChat(itemId, userId) {
+    const { token, user } = checkAuth();
+    if (!token || !user) {
+        alert('Please login first!');
+        window.location.href = 'login.html';
+        return;
+    }
+    const urlParams = new URLSearchParams();
+    if (itemId) urlParams.set('itemId', itemId);
+    if (userId) urlParams.set('userId', userId);
+    window.location.href = `chat.html?${urlParams.toString()}`;
+}
 
 async function updateUnreadCounts() {
     try {

@@ -1,6 +1,7 @@
 const Item = require('../models/Item');
 const axios = require('axios');
 const { buildErrorDetails } = require('../utils/aiService');
+const { calculateOCRScore } = require('../utils/ocrHelper');
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'https://sherlock-ai-service.onrender.com';
 let aiSimilarityErrorLogged = false;
@@ -114,21 +115,32 @@ const findMatches = async (newItem) => {
         }
     }
 
+    // OCR Score Calculation
+    scoredMatches = scoredMatches.map(m => {
+        const ocrScorePercent = calculateOCRScore(newItem.ocrText, m.candidate.ocrText);
+        m.ocrScore = ocrScorePercent / 100; // Convert to 0-1 scale
+        
+        if (ocrScorePercent > 0) {
+            m.reasons.push(`OCR Text Match (${ocrScorePercent}%)`);
+        }
+        
+        return m;
+    });
+
     // Final Score Calculation
     scoredMatches = scoredMatches.map(m => {
         // Normalize Rule Score (Max 8)
         const ruleScoreNorm = Math.min(m.ruleScore / 8, 1.0);
         const similarity = m.similarity || 0;
+        const ocrScore = m.ocrScore || 0;
         
-        // Hybrid Matching Formula: FinalScore = (RuleScore * 0.6) + (ImageSimilarity * 0.4)
+        // Hybrid Matching Formula: FinalScore = (RuleScore * 0.5) + (ImageSimilarity * 0.3) + (OCR * 0.2)
         let finalScoreValue;
         if (m.similarity !== undefined) {
-             finalScoreValue = (ruleScoreNorm * 0.6) + (similarity * 0.4);
+             finalScoreValue = (ruleScoreNorm * 0.5) + (similarity * 0.3) + (ocrScore * 0.2);
         } else {
-             // If no visual data, we rely on rule score. 
-             // To be fair, we can assume 0 similarity or just weight the rule score.
-             // Let's treat it as 0 similarity to encourage visual matches.
-             finalScoreValue = ruleScoreNorm * 0.6;
+             // If no visual data, adjust weights
+             finalScoreValue = (ruleScoreNorm * 0.7) + (ocrScore * 0.3);
         }
         
         m.finalScore = finalScoreValue;

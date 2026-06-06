@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SherLock - Real-Time Chat</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="./css/style.css">
     <style>
         .chat-container {
             max-width: 800px;
@@ -127,6 +127,7 @@
     <div class="container">
         <div class="chat-container">
             <div class="chat-header">
+                <button id="backBtn" class="btn btn-secondary" style="padding:0.5rem 1rem;font-size:0.9rem;">← Back</button>
                 <h2 id="chatWith">Chat 💬</h2>
                 <span id="connectionStatus">🟡 Connecting...</span>
             </div>
@@ -143,9 +144,34 @@
         </div>
     </div>
 
-    <!-- Socket.IO Client -->
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="js/app.js"></script>
-    <script src="js/chat.js"></script>
+    <script src="./js/config.js"></script>
+    <script src="./js/app.js"></script>
+
+    <!-- Load Socket.IO first -->
+    <script id="socket-io-script"></script>
+    <script id="chat-script"></script>
+
+    <script>
+        // Load socket.io.js immediately
+        const socketIoScript = document.getElementById('socket-io-script');
+        socketIoScript.src = `${CONFIG.SOCKET_URL}/socket.io/socket.io.js`;
+        
+        socketIoScript.onload = function () {
+            console.log('Socket.IO client loaded successfully');
+            // Now load chat.js
+            const chatScript = document.getElementById('chat-script');
+            chatScript.src = "./js/chat.js";
+        };
+        
+        socketIoScript.onerror = function () {
+            console.error('Socket.IO client failed to load');
+            const connectionStatus = document.getElementById('connectionStatus');
+            if (connectionStatus) {
+                connectionStatus.textContent = '🔴 Socket.IO not found';
+                connectionStatus.style.color = '#e74c3c';
+            }
+            alert('Chat server not connected. Please start backend server.');
+        };
+    </script>
 </body>
 </html>

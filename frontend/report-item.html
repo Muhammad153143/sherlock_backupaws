@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Report Item - SherLock</title>
-    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="./css/style.css">
 </head>
 <body>
     <nav class="navbar">
@@ -112,66 +112,75 @@
                         </div>
                         <input type="file" id="itemImage" accept="image/*" required style="display: block; margin: 0 auto; padding: 0.5rem;">
                         <p style="margin-top: 0.5rem; color: var(--text-light); font-size: 0.9rem;">Supported formats: JPG, PNG</p>
+                        <p id="ocrStatus" style="margin-top: 0.5rem; font-size: 0.9rem;"></p>
                         <img id="imagePreview" src="" alt="Image Preview" style="display: none; max-width: 100%; max-height: 300px; margin-top: 1rem; border-radius: var(--radius-sm); box-shadow: var(--shadow);">
                     </div>
                 </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                <!-- Verification Questions Section -->
-                <h3 style="margin-top: 1.5rem; margin-bottom: 1rem; color: var(--text-light); border-bottom: 2px dashed #eee; padding-bottom: 0.5rem;">🔐 Ownership Verification Questions</h3>
-                <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; border: 1px solid #e9ecef; margin-bottom: 1.5rem;">
-                    <p style="color: #6c757d; font-size: 0.9rem; margin-bottom: 1rem;">
-                        Add 2-3 private questions that only the owner would know (e.g., "What sticker is on the laptop lid?", "What is the wallpaper?").
-                        <br><strong>Note:</strong> You must add at least 2 questions.
-                    </p>
-                    
-                    <div id="questionsContainer">
-                        <!-- Dynamic questions will be added here -->
+                
+                <!-- ID CARD PROOF FEATURE START -->
+                <h3 style="margin-top: 1.5rem; margin-bottom: 1rem; color: var(--text-light); border-bottom: 2px dashed #eee; padding-bottom: 0.5rem;">🪪 Student ID Card Verification</h3>
+                <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">Upload your student ID card photo for admin verification. This proof will not be shown publicly.</p>
+                
+                <div class="form-group">
+                    <label for="idCardPhoto">ID Card Photo (Required)</label>
+                    <div id="idCardUploadBox" style="border: 2px dashed #ccc; padding: 2rem; text-align: center; border-radius: var(--radius-sm); background: #fff; transition: all 0.3s;">
+                        <div style="margin-bottom: 1rem;">
+                            <span style="font-size: 2.5rem;">🪪</span>
+                        </div>
+                        <input type="file" id="idCardPhoto" name="idCardPhoto" accept="image/jpeg,image/jpg,image/png" capture="environment" required style="display: block; margin: 0 auto; padding: 0.5rem;">
+                        <p style="margin-top: 0.5rem; color: var(--text-light); font-size: 0.9rem;">Supported formats: JPG, PNG | Max size: 5MB</p>
+                        <img id="idCardPreview" src="" alt="ID Card Preview" style="display: none; max-width: 100%; max-height: 300px; margin-top: 1rem; border-radius: var(--radius-sm); box-shadow: var(--shadow);">
                     </div>
-
-                    <button type="button" id="addQuestionBtn" class="btn" style="background-color: #6c757d; margin-top: 1rem; font-size: 0.9rem; width: auto;">
-                        ➕ Add Question
-                    </button>
                 </div>
+                
+                <div class="form-group">
+                    <input type="checkbox" id="idCardConfirm" required style="margin-right: 0.5rem;">
+                    <label for="idCardConfirm">I confirm this ID card belongs to me and is used only for verification.</label>
+                </div>
+                <!-- ID CARD PROOF FEATURE END -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
                 <button type="submit" class="btn" style="width: 100%; margin-top: 1rem;">🚀 Submit Report</button>
             </form>
         </div>
     </div>
 
-    <script src="../js/app.js"></script>
+    <script src="./js/config.js"></script>
+    <script src="./js/app.js"></script>
     <script>
         const { user } = checkAuth();
         if (!user) {
@@ -195,6 +204,7 @@
         const uploadBox = document.getElementById('uploadBox');
         const fileInput = document.getElementById('itemImage');
         const preview = document.getElementById('imagePreview');
+        const ocrStatus = document.getElementById('ocrStatus');
         const dateInput = document.getElementById('date');
         const dateError = document.getElementById('dateError');
         const todayStr = new Date().toISOString().split('T')[0];
@@ -207,6 +217,13 @@
                 dateError.style.display = 'none';
             }
         });
+
+        // Store OCR data
+        let ocrData = {
+            ocrText: '',
+            ocrWords: [],
+            hasTextInImage: false
+        };
 
         // Duplicate Check Logic
         async function performDuplicateCheck() {
@@ -221,7 +238,7 @@
 
             try {
                  const token = localStorage.getItem('token');
-                 const res = await fetch(' https://sherlock-campus.onrender.com/api/v1/items/check-duplicate', {
+                 const res = await fetch(`${CONFIG.API_URL}/items/check-duplicate`, {
                      method: 'POST',
                      headers: {
                          'Content-Type': 'application/json',
@@ -260,7 +277,7 @@
                             ${data.items.length > 0 ? `<small>Similar item: "${data.items[0].title}" (${new Date(data.items[0].date).toLocaleDateString()})</small>` : ''}
                         </div>
                         <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;font-size:1.5rem;color:#856404;">&times;</button>
-                     `;
+                    `;
                      
                      // Insert before form
                      const form = document.getElementById('reportForm');
@@ -281,10 +298,8 @@
         document.getElementById('date').addEventListener('blur', performDuplicateCheck); // Also check when date is changed
         document.getElementById('location').addEventListener('blur', performDuplicateCheck);
 
-        // Removed click listener on uploadBox to avoid conflict with visible file input
-        // uploadBox.addEventListener('click', () => fileInput.click());
-
-        fileInput.addEventListener('change', function() {
+        // OCR FEATURE START: Handle item image selection and OCR
+        fileInput.addEventListener('change', async function() {
             const file = this.files[0];
             if (file) {
                 const reader = new FileReader();
@@ -293,104 +308,96 @@
                     preview.style.display = 'block';
                     uploadBox.style.borderColor = 'var(--primary-color)';
                     uploadBox.style.backgroundColor = '#f0f3f8';
-                }
+                };
                 reader.readAsDataURL(file);
+                
+                // Perform OCR
+                ocrStatus.textContent = 'Reading text from image...';
+                ocrStatus.style.color = 'var(--text-light)';
+                
+                try {
+                    const formData = new FormData();
+                    formData.append('image', file);
+                    
+                    const res = await fetch(`${CONFIG.AI_SERVICE_URL}/ocr`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (res.ok) {
+                        const data = await res.json();
+                        ocrData = {
+                            ocrText: data.normalizedText || data.text || '',
+                            ocrWords: data.words || [],
+                            hasTextInImage: data.hasText || false
+                        };
+                        
+                        if (ocrData.hasTextInImage) {
+                            ocrStatus.textContent = 'Text detected in image: Yes';
+                            ocrStatus.style.color = 'green';
+                        } else {
+                            ocrStatus.textContent = 'Text detected in image: No';
+                            ocrStatus.style.color = 'var(--text-light)';
+                        }
+                    } else {
+                        ocrStatus.textContent = 'Text detection unavailable';
+                        ocrStatus.style.color = 'var(--text-light)';
+                    }
+                } catch (error) {
+                    ocrStatus.textContent = 'Text detection unavailable';
+                    ocrStatus.style.color = 'var(--text-light)';
+                    console.error('OCR error:', error);
+                }
             } else {
                 preview.style.display = 'none';
                 preview.src = '';
+                ocrStatus.textContent = '';
+                ocrData = { ocrText: '', ocrWords: [], hasTextInImage: false };
             }
         });
-
-        // Verification Questions Logic
-        const questionsContainer = document.getElementById('questionsContainer');
-        const addQuestionBtn = document.getElementById('addQuestionBtn');
-        const typeSelect = document.getElementById('type');
-        const verifHelpText = document.querySelector('#questionsContainer').previousElementSibling;
-
-        function updateVerificationHelp() {
-            if (typeSelect.value === 'lost') {
-                verifHelpText.innerHTML = `
-                    <strong>🔐 Private Verification Questions (Lost Item):</strong><br>
-                    Add 2-3 questions about <em>hidden attributes</em> that only YOU (the owner) know. 
-                    (e.g., "What is the wallpaper?", "Is there a scratch on the back?", "What is inside the pocket?").
-                    <br><small>These questions will be asked to anyone claiming this item.</small>
-                `;
+        // OCR FEATURE END
+        
+        // ID CARD PROOF FEATURE START: ID Card Preview Logic
+        const idCardUploadBox = document.getElementById('idCardUploadBox');
+        const idCardInput = document.getElementById('idCardPhoto');
+        const idCardPreview = document.getElementById('idCardPreview');
+        
+        idCardInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                // Validate file type
+                const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+                if (!validTypes.includes(file.type)) {
+                    alert('Only JPG, JPEG, PNG ID card images are allowed');
+                    this.value = '';
+                    idCardPreview.style.display = 'none';
+                    idCardPreview.src = '';
+                    return;
+                }
+                
+                // Validate file size (5MB max)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('ID card image must be less than 5MB');
+                    this.value = '';
+                    idCardPreview.style.display = 'none';
+                    idCardPreview.src = '';
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    idCardPreview.src = e.target.result;
+                    idCardPreview.style.display = 'block';
+                    idCardUploadBox.style.borderColor = 'var(--primary-color)';
+                    idCardUploadBox.style.backgroundColor = '#f0f3f8';
+                };
+                reader.readAsDataURL(file);
             } else {
-                verifHelpText.innerHTML = `
-                    <strong>🔐 Observable Verification Questions (Found Item):</strong><br>
-                    Add 2-3 questions about details you found but <em>did not show in the picture</em>.
-                    (e.g., "What is the brand of the charger?", "What is the name on the ID card inside?").
-                    <br><small>The claimant must answer these correctly to prove ownership.</small>
-                `;
+                idCardPreview.style.display = 'none';
+                idCardPreview.src = '';
             }
-        }
-
-        typeSelect.addEventListener('change', updateVerificationHelp);
-        // Initialize on load
-        updateVerificationHelp();
-
-        function createQuestionRow(index) {
-            const div = document.createElement('div');
-            div.className = 'question-row';
-            div.style.cssText = `
-                display: grid;
-                grid-template-columns: 1fr 1fr auto;
-                gap: 1rem;
-                margin-bottom: 1rem;
-                align-items: start;
-                background: #fff;
-                padding: 1rem;
-                border-radius: 6px;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            `;
-            
-            div.innerHTML = `
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label style="font-size: 0.85rem;">Question ${index + 1}</label>
-                    <input type="text" name="verif_q[]" required placeholder="e.g. What is the laptop wallpaper?" style="width: 100%; box-sizing: border-box;">
-                </div>
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label style="font-size: 0.85rem;">Answer (Private)</label>
-                    <input type="password" name="verif_a[]" required placeholder="Answer" style="width: 100%; box-sizing: border-box;">
-                </div>
-                <button type="button" class="remove-q-btn" style="margin-top: 1.5rem; background: #fee2e2; color: #dc2626; border: none; padding: 0.5rem; border-radius: 4px; cursor: pointer;">🗑️</button>
-            `;
-
-            // Add remove functionality
-            div.querySelector('.remove-q-btn').addEventListener('click', () => {
-                if (document.querySelectorAll('.question-row').length > 2) {
-                    div.remove();
-                    updateQuestionLabels();
-                } else {
-                    alert('You must have at least 2 verification questions.');
-                }
-            });
-
-            return div;
-        }
-
-        function updateQuestionLabels() {
-            document.querySelectorAll('.question-row').forEach((row, idx) => {
-                row.querySelector('label').textContent = `Question ${idx + 1}`;
-            });
-        }
-
-        // Initialize with 2 empty question rows
-        if (questionsContainer) {
-            questionsContainer.appendChild(createQuestionRow(0));
-            questionsContainer.appendChild(createQuestionRow(1));
-        }
-
-        if (addQuestionBtn) {
-            addQuestionBtn.addEventListener('click', () => {
-                const count = document.querySelectorAll('.question-row').length;
-                if (count < 5) {
-                    questionsContainer.appendChild(createQuestionRow(count));
-                } else {
-                    alert('Maximum 5 questions allowed.');
-                }
-            });
-        }
+        });
+        // ID CARD PROOF FEATURE END
 
         document.getElementById('reportForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -465,14 +472,26 @@
                     errors.push("Image size should be less than 5MB.");
                 }
             }
-
-            // 11. Verification Questions Count
-            const questions = Array.from(document.getElementsByName('verif_q[]')).map(i => i.value);
-            const answers = Array.from(document.getElementsByName('verif_a[]')).map(i => i.value);
-
-            if (questions.length < 2) {
-                errors.push("Please provide at least 2 verification questions.");
+            
+            // ID CARD PROOF FEATURE START: ID Card Validation
+            const idCardFile = document.getElementById('idCardPhoto').files[0];
+            if (!idCardFile) {
+                errors.push("Student ID card photo is required.");
+            } else {
+                const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+                if (!validTypes.includes(idCardFile.type)) {
+                    errors.push("Only JPG, JPEG, PNG ID card images are allowed.");
+                }
+                if (idCardFile.size > 5 * 1024 * 1024) { // 5MB limit
+                    errors.push("ID card image must be less than 5MB.");
+                }
             }
+            
+            const idCardConfirm = document.getElementById('idCardConfirm').checked;
+            if (!idCardConfirm) {
+                errors.push("Please confirm that the ID card belongs to you.");
+            }
+            // ID CARD PROOF FEATURE END
 
             if (errors.length > 0) {
                 alert("Validation Errors:\n• " + errors.join("\n• "));
@@ -498,19 +517,26 @@
             formData.append('description', descVal);
             formData.append('contactInfo', contactVal);
             
-            // Since we are using FormData, we should append these as JSON strings or individual arrays
-            // For simplicity and to match our controller update:
-            formData.append('verificationQuestions', JSON.stringify(questions));
-            formData.append('verificationAnswers', JSON.stringify(answers));
+            // OCR FEATURE START: Append OCR data
+            formData.append('ocrText', ocrData.ocrText);
+            formData.append('ocrWords', JSON.stringify(ocrData.ocrWords));
+            formData.append('hasTextInImage', ocrData.hasTextInImage);
+            // OCR FEATURE END
 
             if (imageFile) {
                 formData.append('image', imageFile);
             }
+            
+            // ID CARD PROOF FEATURE START: Append ID card photo
+            if (idCardFile) {
+                formData.append('idCardPhoto', idCardFile);
+            }
+            // ID CARD PROOF FEATURE END
 
             try {
                 // Using fetch directly because fetchAPI helper might assume JSON content-type
                 const token = localStorage.getItem('token');
-                const res = await fetch('https://sherlock-campus.onrender.com/api/v1/items', {
+                const res = await fetch(`${CONFIG.API_URL}/items`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`

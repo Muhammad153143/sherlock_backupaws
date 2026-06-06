@@ -1,11 +1,20 @@
 import os
 import io
+import re
 import torch
 import torch.nn as nn
 from torchvision import models, transforms
 from PIL import Image
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+
+# Try to import pytesseract, but make it optional
+try:
+    import pytesseract
+    TESSERACT_AVAILABLE = True
+except ImportError:
+    TESSERACT_AVAILABLE = False
+    print("Warning: pytesseract not installed. OCR functionality will be limited.")
 
 app = Flask(__name__)
 CORS(app)
@@ -124,6 +133,52 @@ def similarity():
     return jsonify({
         "scores": scores.tolist()
     })
+
+
+# OCR FEATURE START: OCR ROUTE
+@app.route("/ocr", methods=["POST"])
+def ocr():
+    if "image" not in request.files:
+        return jsonify({"error": "No image"}), 400
+
+    try:
+        image = Image.open(request.files["image"])
+        
+        if not TESSERACT_AVAILABLE:
+            return jsonify({
+                "text": "",
+                "normalizedText": "",
+                "words": [],
+                "hasText": False
+            })
+
+        # Extract text using pytesseract
+        text = pytesseract.image_to_string(image)
+        
+        # Normalize text
+        normalized_text = re.sub(r'\s+', ' ', text.strip()).lower()
+        
+        # Extract words (at least 2 characters)
+        words = list(set([word for word in re.findall(r'\b[a-zA-Z0-9]{2,}\b', normalized_text)]))
+        
+        has_text = len(normalized_text) > 0
+
+        return jsonify({
+            "text": text,
+            "normalizedText": normalized_text,
+            "words": words,
+            "hasText": has_text
+        })
+
+    except Exception as e:
+        print(f"OCR error: {e}")
+        return jsonify({
+            "text": "",
+            "normalizedText": "",
+            "words": [],
+            "hasText": False
+        })
+# OCR FEATURE END
 
 
 # IMPORTANT FOR RENDER

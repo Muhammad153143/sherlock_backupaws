@@ -16,8 +16,13 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "*", // Adjust as needed for production
-        methods: ["GET", "POST"]
+        origin: [
+            "http://localhost:5500",
+            "http://127.0.0.1:5500",
+            process.env.FRONTEND_URL
+        ].filter(Boolean),
+        methods: ["GET", "POST"],
+        credentials: true
     }
 });
 
@@ -55,7 +60,9 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,
   "https://vvit-sherlock.vercel.app/api/v1",
   "http://localhost:3000",
-  "http://localhost:5000"
+  "http://localhost:5000",
+  "http://localhost:5500",
+  "http://127.0.0.1:5500"
 ];
 
 app.use(cors({
@@ -85,7 +92,7 @@ const apiLimiter = rateLimit({
 app.use('/api/v1', apiLimiter);
 
 // Serve static files (uploads)
-app.use('api/v1/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/api/v1/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Serve Frontend
 app.use(express.static(path.join(__dirname, '../frontend')));
@@ -124,6 +131,23 @@ app.get('/reset-password/:token', (req, res) => {
 // Test Route
 app.get('/', (req, res) => {
     res.send('SherLock Backend is Running 🚀');
+});
+
+// AI Connection Test Route
+app.get("/api/v1/test-ai", async (req, res) => {
+    try {
+        const axios = require("axios");
+        const response = await axios.get(`${process.env.AI_SERVICE_URL}/health`);
+        res.json({
+            success: true,
+            ai: response.data
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
 });
 
 // Error Handler (must have 4 args to be recognized by Express)

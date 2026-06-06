@@ -108,39 +108,6 @@ const itemSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Item'
     },
-    // Security Feature: Private Verification Questions
-    // Minimum 2 and maximum 5 private verification questions
-    verificationQuestions: {
-        type: [{
-            type: String,
-            trim: true,
-            required: [true, 'Verification question cannot be empty']
-        }],
-        validate: {
-            validator: function(v) {
-                return v.length >= 2 && v.length <= 5;
-            },
-            message: 'You must provide between 2 and 5 verification questions'
-        }
-    },
-    verificationAnswers: {
-        type: [{
-            type: String,
-            trim: true,
-            required: [true, 'Verification answer cannot be empty']
-        }],
-        select: false, // Security: Never return answers in API queries
-        immutable: true, // Security: Answers cannot be changed once set
-        validate: {
-            validator: function(v) {
-                // Access the document to check questions length
-                // Note: this validator runs on the array path, but we need to ensure length matches questions
-                // Ideally this check is done in controller or pre-save, but basic length check here
-                return v.length >= 2 && v.length <= 5;
-            },
-            message: 'You must provide between 2 and 5 verification answers'
-        }
-    },
     claims: [{
         user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
         answers: [String],
@@ -152,6 +119,36 @@ const itemSchema = new mongoose.Schema({
         },
         timestamp: { type: Date, default: Date.now }
     }],
+    // OCR FEATURE START
+    ocrText: {
+        type: String,
+        default: ""
+    },
+    ocrWords: {
+        type: [String],
+        default: []
+    },
+    hasTextInImage: {
+        type: Boolean,
+        default: false
+    },
+    // OCR FEATURE END
+    // ID CARD PROOF FEATURE START
+    idCardProof: {
+        imageUrl: {
+            type: String,
+            default: ""
+        },
+        uploadedAt: {
+            type: Date
+        }
+    },
+    reporterProofStatus: {
+        type: String,
+        enum: ['pending', 'verified', 'rejected'],
+        default: 'pending'
+    }
+    // ID CARD PROOF FEATURE END
 }, { timestamps: true });
 
 itemSchema.index({ user: 1 });

@@ -5,6 +5,7 @@ const fs = require('fs');
 const axios = require('axios');
 const FormData = require('form-data');
 const { findMatches } = require('../utils/matchService');
+const { extractTextFromImage } = require('../utils/ocrHelper');
 
 // AI Service URL
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'https://sherlock-ai-service.onrender.com';
@@ -17,7 +18,7 @@ exports.getItems = async (req, res) => {
     try {
         console.log('📋 GET /api/v1/items - Fetching public items');
         const items = await Item.find({ status: { $in: ['verified', 'resolved'] } })
-            .select('-contactInfo -studentName -rollNumber -studentEmail')
+            .select('-contactInfo -studentName -rollNumber -studentEmail -idCardProof -verificationAnswers')
             .populate('user', 'name')
             .sort({ date: -1 });
         console.log(`📋 Found ${items.length} public items`);
@@ -82,92 +83,7 @@ exports.getItem = async (req, res) => {
     }
 };
 
-// @desc    Verify a claim on an item
-// @route   POST /api/items/:id/claim
-// @access  Private
-exports.verifyClaim = async (req, res) => {
-    try {
-        const { answers } = req.body;
-        const itemId = req.params.id;
-        const userId = req.user.id;
 
-        // Explicitly select verificationAnswers because they are hidden by default
-        const item = await Item.findById(itemId).select('+verificationAnswers');
-
-        if (!item) {
-            return res.status(404).json({ message: 'Item not found' });
-        }
-
-        if (item.user.toString() === userId) {
-            return res.status(400).json({ message: 'You cannot claim your own item' });
-        }
-
-        if (!item.verificationQuestions || item.verificationQuestions.length === 0) {
-            return res.status(400).json({ message: 'This item has no verification questions set' });
-        }
-
-        if (answers.length !== item.verificationQuestions.length) {
-            return res.status(400).json({ message: 'Please answer all verification questions' });
-        }
-
-        // Check answers (Case-insensitive comparison)
-        let correctCount = 0;
-        item.verificationAnswers.forEach((ans, index) => {
-            if (ans.toLowerCase().trim() === answers[index].toLowerCase().trim()) {
-                correctCount++;
-            }
-        });
-
-        // Determine status based on accuracy (currently requiring 100% match for 'verified' status system-wise)
-        const isMatch = correctCount === item.verificationQuestions.length;
-        const status = isMatch ? 'verified' : 'rejected';
-
-        // Add to claims history
-        // Check if user already claimed
-        const existingClaimIndex = item.claims.findIndex(c => c.user.toString() === userId);
-        
-        const claimData = {
-            user: userId,
-            answers: answers,
-            score: correctCount,
-            status: status,
-            timestamp: Date.now()
-        };
-
-        if (existingClaimIndex !== -1) {
-            item.claims[existingClaimIndex] = claimData;
-        } else {
-            item.claims.push(claimData);
-        }
-
-        // SYSTEM VERIFICATION LOGIC:
-        // If the claim is verified by the system (100% match), we mark the ITEM as 'verified'.
-        // This pushes it to the Admin's "Verified" queue for final physical handover.
-        if (isMatch) {
-            item.status = 'verified';
-            item.matchedWith = userId; // Tentatively link to the claimant (optional, but good for tracking)
-        }
-
-        await item.save();
-
-        if (isMatch) {
-            res.status(200).json({ 
-                success: true, 
-                message: 'Verification successful! Claim forwarded to admin.',
-                status: 'verified'
-            });
-        } else {
-            res.status(400).json({ 
-                success: false, 
-                message: 'Verification failed. Answers do not match.',
-                status: 'rejected'
-            });
-        }
-
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
 
 // @desc    Create new item
 // @route   POST /api/items
@@ -177,13 +93,26 @@ exports.createItem = async (req, res) => {
         console.log('📝 POST /api/v1/items - Creating new item');
         console.log('📝 User:', req.user?.id);
         console.log('📝 Body:', JSON.stringify(req.body, null, 2));
-        console.log('📝 File:', req.file ? req.file.path : 'No file');
+        console.log('📝 Files:', req.files ? Object.keys(req.files) : 'No files');
         
        let imageUrl = null;
+       let idCardUrl = null;
 
-     if (req.file) {
-       imageUrl = req.file.path;   // Cloudinary gives full URL here
-  }
+     if (req.files && req.files.image && req.files.image[0]) {
+       imageUrl = req.files.image[0].path;   // Cloudinary gives full URL here
+     }
+     
+     if (req.files && req.files.idCardPhoto && req.files.idCardPhoto[0]) {
+         idCardUrl = req.files.idCardPhoto[0].path;
+     }
+     
+     // Validate item image and ID card
+     if (!imageUrl) {
+         return res.status(400).json({ message: 'Item image is required' });
+     }
+     if (!idCardUrl) {
+         return res.status(400).json({ message: 'Student ID card photo is required' });
+     }
 
         const itemData = {
             ...req.body,
@@ -199,28 +128,6 @@ exports.createItem = async (req, res) => {
         }
         itemData.date = parsedDate;
 
-        // Parse verification fields if they come as strings (common in FormData)
-        if (typeof itemData.verificationQuestions === 'string') {
-            try {
-                itemData.verificationQuestions = JSON.parse(itemData.verificationQuestions);
-            } catch (e) {
-                // If not JSON, maybe comma separated? Or just leave as single string (will be wrapped in array by mongoose if defined as array? No, string to array cast might fail or create 1 element)
-                // Better to assume JSON or if it's just a single value
-            }
-        }
-        if (typeof itemData.verificationAnswers === 'string') {
-            try {
-                itemData.verificationAnswers = JSON.parse(itemData.verificationAnswers);
-            } catch (e) {}
-        }
-
-        // Validate Q&A length match
-        if (itemData.verificationQuestions && itemData.verificationAnswers) {
-            if (itemData.verificationQuestions.length !== itemData.verificationAnswers.length) {
-                return res.status(400).json({ message: 'Number of verification questions and answers must match' });
-            }
-        }
-
         if (req.dupMeta && req.dupMeta.normalizedTitle) {
             itemData.normalizedTitle = req.dupMeta.normalizedTitle;
         }
@@ -234,7 +141,7 @@ exports.createItem = async (req, res) => {
             // AI Integration: Generate Image Embedding
             try {
                 const form = new FormData();
-                form.append('image', fs.createReadStream(req.file.path));
+                form.append('image', fs.createReadStream(req.files.image[0].path));
                 
                 const aiResponse = await axios.post(`${AI_SERVICE_URL}/embed`, form, {
                     headers: {
@@ -255,7 +162,34 @@ exports.createItem = async (req, res) => {
                 }
                 // We continue without embedding if AI service fails
             }
+            
+            // OCR FEATURE START: Extract text from item image
+            const ocrResult = await extractTextFromImage(req.files.image[0].path);
+            itemData.ocrText = ocrResult.ocrText;
+            itemData.ocrWords = ocrResult.ocrWords;
+            itemData.hasTextInImage = ocrResult.hasTextInImage;
+            // Also check if frontend sent OCR data, use that if available
+            if (req.body.ocrText) {
+                itemData.ocrText = req.body.ocrText;
+            }
+            if (req.body.ocrWords) {
+                try {
+                    itemData.ocrWords = typeof req.body.ocrWords === 'string' ? JSON.parse(req.body.ocrWords) : req.body.ocrWords;
+                } catch (e) {}
+            }
+            if (req.body.hasTextInImage !== undefined) {
+                itemData.hasTextInImage = req.body.hasTextInImage === 'true' || req.body.hasTextInImage === true;
+            }
+            // OCR FEATURE END
         }
+        
+        // ID CARD PROOF FEATURE START
+        itemData.idCardProof = {
+            imageUrl: idCardUrl,
+            uploadedAt: new Date()
+        };
+        itemData.reporterProofStatus = 'pending';
+        // ID CARD PROOF FEATURE END
 
         let item;
         let usedSession = false;
@@ -467,6 +401,54 @@ exports.deleteItem = async (req, res) => {
 
         await Item.deleteOne({ _id: req.params.id });
         res.status(200).json({ id: req.params.id });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Get item ID card proof (Admin only)
+// @route   GET /api/items/:id/proof
+// @access  Private/Admin
+exports.getItemProof = async (req, res) => {
+    try {
+        const item = await Item.findById(req.params.id);
+        if (!item) {
+            return res.status(404).json({ message: 'Item not found' });
+        }
+        
+        if (!item.idCardProof || !item.idCardProof.imageUrl) {
+            return res.status(200).json({ message: 'ID proof not uploaded for this report' });
+        }
+        
+        res.status(200).json({
+            idCardProof: item.idCardProof,
+            reporterProofStatus: item.reporterProofStatus
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Update item ID proof status (Admin only)
+// @route   PATCH /api/items/:id/proof-status
+// @access  Private/Admin
+exports.updateProofStatus = async (req, res) => {
+    try {
+        const { status } = req.body;
+        
+        if (!['pending', 'verified', 'rejected'].includes(status)) {
+            return res.status(400).json({ message: 'Invalid status' });
+        }
+        
+        const item = await Item.findById(req.params.id);
+        if (!item) {
+            return res.status(404).json({ message: 'Item not found' });
+        }
+        
+        item.reporterProofStatus = status;
+        await item.save();
+        
+        res.status(200).json({ message: 'Proof status updated', reporterProofStatus: status });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
