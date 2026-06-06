@@ -1,3 +1,4 @@
+const API_URL = 'http://sherlock-backend-env.eba-vi7tm3gu.eu-north-1.elasticbeanstalk.com/api/v1';
 // Helper function to handle fetch errors
 async function fetchAPI(endpoint, options = {}) {
     const token = localStorage.getItem('token');
