@@ -1,3 +1,4 @@
+const socket = io('http://sherlock-backend-env.eba-vi7tm3gu.eu-north-1.elasticbeanstalk.com');
 // Initialize chat.js
 console.log("=== Chat.js Started ===");
 let socket;
