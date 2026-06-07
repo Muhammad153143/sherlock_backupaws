@@ -14,7 +14,8 @@ let chatWithHeader;
 let logoutBtn;
 let backBtn;
 
-document.addEventListener('DOMContentLoaded', () => {
+function startChatPage() {
+
     console.log("=== DOM Loaded ===");
     // Initialize DOM elements
     chatMessages = document.getElementById('chatMessages');
@@ -117,7 +118,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Start auth check
     checkChatAuth(itemId, userId);
-});
+
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", startChatPage);
+} else {
+    startChatPage();
+}
 
 // Check Authentication
 async function checkChatAuth(itemId, userId) {
@@ -172,6 +180,11 @@ async function initChat(itemId, userId) {
 
 // Initialize Socket.IO
 function initializeSocket(itemId) {
+    if (socket && socket.connected) {
+        console.log("Socket already connected");
+        return;
+    }
+
     if (typeof io === "undefined") {
         console.error("Socket.IO not loaded");
         if (connectionStatus) {
