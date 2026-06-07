@@ -238,7 +238,7 @@
 
             try {
                  const token = localStorage.getItem('token');
-                 const res = await fetch(`https://sherlock-backend-env.eba-vi7tm3gu.eu-north-1.elasticbeanstalk.com/api/v1/items/check-duplicate`, {
+                 const res = await fetch(`/items/check-duplicate`, {
                      method: 'POST',
                      headers: {
                          'Content-Type': 'application/json',
@@ -536,7 +536,7 @@
             try {
                 // Using fetch directly because fetchAPI helper might assume JSON content-type
                 const token = localStorage.getItem('token');
-                const res = await fetch(`https://sherlock-backend-env.eba-vi7tm3gu.eu-north-1.elasticbeanstalk.com/api/v1/items`, {
+                const res = await fetch(`/items`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`
