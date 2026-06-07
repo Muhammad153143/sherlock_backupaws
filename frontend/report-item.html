@@ -534,22 +534,10 @@
             // ID CARD PROOF FEATURE END
 
             try {
-                // Using fetch directly because fetchAPI helper might assume JSON content-type
-                const token = localStorage.getItem('token');
-                const res = await fetch(`/items`, {
+                const data = await fetchAPI('/items', {
                     method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                        // Content-Type is set automatically for FormData
-                    },
                     body: formData
                 });
-
-                const data = await res.json();
-
-                if (!res.ok) {
-                    throw new Error(data.message || 'Something went wrong');
-                }
 
                 alert('Report submitted successfully! 🕵️‍♂️');
                 window.location.href = 'my-reports.html';
