@@ -176,6 +176,14 @@ async function initChat(itemId, userId) {
 
     // Initialize Socket.IO
     initializeSocket(itemId);
+
+    // AWS/Amplify fallback: refresh chat history every 5 seconds
+    // This keeps chat usable even if WebSocket real-time connection fails.
+    if (!window.__chatRefreshTimer) {
+        window.__chatRefreshTimer = setInterval(() => {
+            loadChatHistory(itemId);
+        }, 5000);
+    }
 }
 
 // Initialize Socket.IO
@@ -195,7 +203,8 @@ function initializeSocket(itemId) {
     }
 
     socket = io(CONFIG.SOCKET_URL, {
-        transports: ["websocket", "polling"],
+        path: "/socket.io",
+        transports: ["polling"],
         withCredentials: true
     });
 
