@@ -154,13 +154,13 @@
     <script>
         // Load socket.io.js immediately
         const socketIoScript = document.getElementById('socket-io-script');
-        socketIoScript.src = `${CONFIG.SOCKET_URL}/socket.io/socket.io.js`;
+        socketIoScript.src = `${CONFIG.SOCKET_URL}/socket.io/socket.io.js?v=4.7.5`;
         
         socketIoScript.onload = function () {
             console.log('Socket.IO client loaded successfully');
             // Now load chat.js
             const chatScript = document.getElementById('chat-script');
-            chatScript.src = "./js/chat.js";
+            chatScript.src = "./js/chat.js?v=fix-chat-init-1";
         };
         
         socketIoScript.onerror = function () {
