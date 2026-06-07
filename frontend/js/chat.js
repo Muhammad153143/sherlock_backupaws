@@ -1,4 +1,4 @@
-const socket = io(CONFIG.SOCKET_URL);
+
 // Initialize chat.js
 console.log("=== Chat.js Started ===");
 let socket;
