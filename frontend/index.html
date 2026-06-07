@@ -194,7 +194,7 @@
 
         async function loadRecentItems() {
             try {
-                const items = await fetchAPI('https://sherlock-backend-env.eba-vi7tm3gu.eu-north-1.elasticbeanstalk.com/api/v1//items'); // Public endpoint
+                const items = await fetchAPI('/items'); // Public endpoint
                 const grid = document.getElementById('items-grid');
                 
                 if (items.length === 0) {
