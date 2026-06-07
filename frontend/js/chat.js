@@ -1,7 +1,6 @@
-
 // Initialize chat.js
 console.log("=== Chat.js Started ===");
-let socket;
+let socket = null;
 let currentUser = null;
 let currentItem = null;
 
