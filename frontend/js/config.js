@@ -1,3 +1,4 @@
+const API_BASE_URL = "http://sherlock-backend-env.eba-vi7tm3gu.eu-north-1.elasticbeanstalk.com";
 const isLocal =
     window.location.hostname === "localhost" ||
     window.location.hostname === "127.0.0.1";
